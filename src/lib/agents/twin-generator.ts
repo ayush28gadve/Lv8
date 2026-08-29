@@ -39,6 +39,8 @@ import type { GraphStateType } from '@/lib/orchestration/state';
 export async function twinGeneratorNode(
   state: GraphStateType
 ): Promise<Partial<GraphStateType>> {
+  const startTime = Date.now();
+
   // ── Guards ────────────────────────────────────────────────────────────────
   if (!state.currentProblem) {
     return { lastError: 'twinGeneratorNode: currentProblem is null.' };
@@ -90,17 +92,20 @@ export async function twinGeneratorNode(
     });
 
     // ── Call Gemini ───────────────────────────────────────────────────────
-    // Slightly higher temperature for creativity in surface-feature variation,
+    // Low thinking level for creativity in surface-feature variation,
     // while staying deterministic enough to produce valid physics.
     const rawResult = await generateJSON<TwinProblem>(user, {
       systemInstruction: system,
-      temperature: 0.6,
       maxOutputTokens: 2048,
       responseSchema: TWIN_RESPONSE_SCHEMA,
+      thinkingLevel: 'LOW',
+      label: 'TwinGenerator',
     });
 
     // ── Validate via Zod ──────────────────────────────────────────────────
     const generatedTwin = TwinProblemSchema.parse(rawResult);
+
+    console.log(`[ConceptTwin] TwinGenerator: ${Date.now() - startTime} ms`);
 
     return {
       generatedTwin,
@@ -110,6 +115,7 @@ export async function twinGeneratorNode(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[ConceptTwin] TwinGenerator failed after ${Date.now() - startTime} ms: ${message}`);
     return { lastError: `twinGeneratorNode error: ${message}` };
   }
 }

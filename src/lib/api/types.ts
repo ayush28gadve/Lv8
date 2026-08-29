@@ -182,7 +182,18 @@ export interface SessionApiResponse {
 export interface SessionApiError {
   ok: false;
   error: string;
-  code: 'BAD_REQUEST' | 'NOT_FOUND' | 'INTERNAL_ERROR' | 'TIMEOUT';
+  code:
+    | 'BAD_REQUEST'
+    | 'NOT_FOUND'
+    | 'INTERNAL_ERROR'
+    | 'TIMEOUT'
+    | 'GEMINI_AUTH_ERROR'
+    | 'GEMINI_MODEL_NOT_FOUND'
+    | 'GEMINI_RATE_LIMIT'
+    | 'GEMINI_UNAVAILABLE'
+    | 'GEMINI_TIMEOUT'
+    | 'GRAPH_ERROR'
+    | 'VALIDATION_ERROR';
 }
 
 export type SessionApiResult = SessionApiResponse | SessionApiError;

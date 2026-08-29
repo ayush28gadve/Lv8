@@ -111,6 +111,12 @@ export const GraphState = Annotation.Root({
     default: () => 0,
   }),
 
+  // -- Workflow control --
+  stage: Annotation<'seed' | 'twin'>({
+    reducer: replace<'seed' | 'twin'>,
+    default: () => 'seed',
+  }),
+
   // -- Error tracking --
   lastError: Annotation<string | null>({
     reducer: replace<string | null>,

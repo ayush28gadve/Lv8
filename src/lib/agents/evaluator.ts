@@ -37,6 +37,8 @@ import type { GraphStateType } from '@/lib/orchestration/state';
 export async function evaluatorNode(
   state: GraphStateType
 ): Promise<Partial<GraphStateType>> {
+  const startTime = Date.now();
+
   // ── Guards ────────────────────────────────────────────────────────────────
   if (!state.currentProblem) {
     return {
@@ -66,11 +68,12 @@ export async function evaluatorNode(
     const rawResult = await callWithRetry<EvaluationResult>(
       user,
       system,
-      3,
+      2, // 2 attempts max
       { 
-        temperature: 0.2, 
         maxOutputTokens: 1024,
-        responseSchema: EVALUATION_RESPONSE_SCHEMA 
+        responseSchema: EVALUATION_RESPONSE_SCHEMA,
+        thinkingLevel: 'LOW',
+        label: 'Evaluator'
       }
     );
 
@@ -89,6 +92,8 @@ export async function evaluatorNode(
           ? 'surface'
           : 'developing';
 
+    console.log(`[ConceptTwin] Evaluator: ${Date.now() - startTime} ms`);
+
     return {
       evaluation,
       masteryLevel,
@@ -96,6 +101,7 @@ export async function evaluatorNode(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[ConceptTwin] Evaluator failed after ${Date.now() - startTime} ms: ${message}`);
     return { lastError: `evaluatorNode error: ${message}` };
   }
 }

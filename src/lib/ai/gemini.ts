@@ -7,7 +7,7 @@
  * the LLM provider only requires changes here.
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 
 // ---------------------------------------------------------------------------
 // Lazy client factory
@@ -47,17 +47,9 @@ export const genai = { get client() { return getGenAI(); } };
 // Model constants
 // ---------------------------------------------------------------------------
 
-/**
- * Primary reasoning model – used for evaluation and diagnosis.
- * Flash models are preferred for latency-sensitive demo workloads.
- */
-export const PRIMARY_MODEL = 'gemini-3.7-flash';
-
-/**
- * Structured output model – used when strict JSON schema compliance is required
- * (twin generation, verification output parsing).
- */
-export const STRUCTURED_MODEL = 'gemini-3.7-flash';
+export const GEMINI_MODEL = 'gemini-3.6-flash';
+export const PRIMARY_MODEL = GEMINI_MODEL;
+export const STRUCTURED_MODEL = GEMINI_MODEL;
 
 // ---------------------------------------------------------------------------
 // Helper types & utilities
@@ -70,10 +62,12 @@ export interface GenerateOptions {
   systemInstruction?: string;
   /** Max output tokens. Defaults to 2048 */
   maxOutputTokens?: number;
-  /** Temperature (0–2). Lower = more deterministic. */
-  temperature?: number;
   /** Optional structured JSON schema */
   responseSchema?: Record<string, unknown>;
+  /** Optional thinking configuration level (Gemini 3.x) */
+  thinkingLevel?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';
+  /** Descriptive name for logging timing/errors */
+  label?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -179,31 +173,50 @@ export async function generateText(
     model = PRIMARY_MODEL,
     systemInstruction,
     maxOutputTokens = 2048,
-    temperature = 0.4,
     responseSchema,
+    thinkingLevel,
+    label = 'Gemini Call',
   } = options;
 
-  const response = await genai.client.models.generateContent({
-    model,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: {
-      maxOutputTokens,
-      temperature,
-      ...(systemInstruction ? { systemInstruction } : {}),
-      ...(responseSchema
-        ? {
-            responseMimeType: 'application/json',
-            responseSchema,
-          }
-        : {}),
-    },
-  });
+  console.log(`[Gemini] ${label} START`);
+  const start = Date.now();
+  try {
+    const response = await genai.client.models.generateContent({
+      model,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        maxOutputTokens,
+        ...(systemInstruction ? { systemInstruction } : {}),
+        ...(thinkingLevel
+          ? {
+              thinkingConfig: model.includes('3.7') || model.includes('3.6')
+                ? { thinkingLevel: thinkingLevel as unknown as ThinkingLevel }
+                : { thinkingBudget: thinkingLevel === 'MINIMAL' || thinkingLevel === 'LOW' ? 1024 : 2048 }
+            }
+          : {}),
+        ...(responseSchema
+          ? {
+              responseMimeType: 'application/json',
+              responseSchema,
+            }
+          : {}),
+      },
+    });
 
-  const text = response.text;
-  if (!text) {
-    throw new Error('[ConceptTwin] Gemini returned an empty response.');
+    const text = response.text;
+    if (!text) {
+      throw new Error('[ConceptTwin] Gemini returned an empty response.');
+    }
+    console.log(`[Gemini] ${label} END ${Date.now() - start}ms`);
+    return text;
+  } catch (err) {
+    const duration = Date.now() - start;
+    const message = err instanceof Error ? err.message : String(err);
+    const errObj = err as unknown as { status?: unknown; code?: unknown };
+    const status = errObj.status || errObj.code || 'N/A';
+    console.error(`[Gemini] ${label} ERROR after ${duration}ms\nstatus=${status}\nmessage=${message}`);
+    throw err;
   }
-  return text;
 }
 
 /**
@@ -230,7 +243,6 @@ export async function generateJSON<T>(
 
 /**
  * Call Gemini with automatic retries on JSON parse failures.
- * On each retry the temperature is raised slightly to break repetition loops.
  *
  * @param userPrompt   The user-turn content.
  * @param systemPrompt System instruction prepended by Gemini.
@@ -239,7 +251,7 @@ export async function generateJSON<T>(
 export async function callWithRetry<T>(
   userPrompt: string,
   systemPrompt: string,
-  maxAttempts = 3,
+  maxAttempts = 2,
   baseOptions: Omit<GenerateOptions, 'systemInstruction'> = {}
 ): Promise<T> {
   let lastError: unknown;
@@ -248,10 +260,39 @@ export async function callWithRetry<T>(
       return await generateJSON<T>(userPrompt, {
         ...baseOptions,
         systemInstruction: systemPrompt,
-        temperature: (baseOptions.temperature ?? 0.2) + attempt * 0.1,
       });
     } catch (err) {
       lastError = err;
+      
+      const message = err instanceof Error ? err.message : String(err);
+      const errObj = err as unknown as { status?: unknown; code?: unknown };
+      const errStatus = (errObj.status as number) || (errObj.code as number) || 0;
+      
+      // Do NOT retry permanent errors (400, 401, 403, 404)
+      const isPermanent = 
+        errStatus === 400 || 
+        errStatus === 401 || 
+        errStatus === 403 || 
+        errStatus === 404 ||
+        message.includes('400') ||
+        message.includes('401') ||
+        message.includes('403') ||
+        message.includes('404') ||
+        message.includes('INVALID_ARGUMENT') ||
+        message.includes('API key');
+        
+      if (isPermanent) {
+        console.error(`[Gemini Retry] Permanent error encountered (status=${errStatus}). Aborting retry. Error: ${message}`);
+        throw err;
+      }
+      
+      if (attempt < maxAttempts - 1) {
+        const delay = 500 * Math.pow(2, attempt);
+        console.warn(`[Gemini Retry] Transient error on attempt ${attempt + 1} (status=${errStatus}): ${message}. Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        console.error(`[Gemini Retry] Max attempts (${maxAttempts}) exhausted. Final error: ${message}`);
+      }
     }
   }
   throw lastError;

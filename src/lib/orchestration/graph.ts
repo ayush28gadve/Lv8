@@ -69,6 +69,16 @@ const ROUTE_REMEDIATION = 'remediation_required';
 // ---------------------------------------------------------------------------
 
 /**
+ * Route graph entry point based on stage field.
+ */
+function routeEntryPoint(state: GraphStateType): string {
+  if (state.stage === 'twin') {
+    return NODE_VERIFIER;
+  }
+  return NODE_EVALUATOR;
+}
+
+/**
  * After evaluation: route to mastery end-state or diagnostician.
  */
 function routeAfterEval(state: GraphStateType): string {
@@ -84,6 +94,16 @@ function routeAfterEval(state: GraphStateType): string {
 
   // Answer wrong, or correct answer via wrong reasoning → need diagnosis.
   return NODE_DIAGNOSTICIAN;
+}
+
+/**
+ * After twin generation: in seed stage go straight to END; in twin stage route to verifier.
+ */
+function routeAfterTwinGeneration(state: GraphStateType): string {
+  if (state.stage === 'seed') {
+    return END;
+  }
+  return NODE_VERIFIER;
 }
 
 /**
@@ -129,7 +149,10 @@ function buildConceptTwinGraph() {
     .addNode(NODE_VERIFIER, verifierNode)
 
     // ── Entry point ──────────────────────────────────────────────────────
-    .addEdge('__start__', NODE_EVALUATOR)
+    .addConditionalEdges('__start__', routeEntryPoint, {
+      [NODE_EVALUATOR]: NODE_EVALUATOR,
+      [NODE_VERIFIER]: NODE_VERIFIER,
+    })
 
     // ── Conditional: after evaluation ────────────────────────────────────
     .addConditionalEdges(NODE_EVALUATOR, routeAfterEval, {
@@ -141,8 +164,11 @@ function buildConceptTwinGraph() {
     // ── Linear: diagnostician → twin generator ────────────────────────────
     .addEdge(NODE_DIAGNOSTICIAN, NODE_TWIN_GENERATOR)
 
-    // ── Linear: twin generator → verifier ────────────────────────────────
-    .addEdge(NODE_TWIN_GENERATOR, NODE_VERIFIER)
+    // ── Conditional: after twin generator ─────────────────────────────────
+    .addConditionalEdges(NODE_TWIN_GENERATOR, routeAfterTwinGeneration, {
+      [END]: END,
+      [NODE_VERIFIER]: NODE_VERIFIER,
+    })
 
     // ── Conditional: after verification ──────────────────────────────────
     .addConditionalEdges(NODE_VERIFIER, routeAfterVerification, {

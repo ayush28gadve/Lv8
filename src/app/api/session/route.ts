@@ -63,6 +63,69 @@ function errorResponse(
   return json<SessionApiError>({ ok: false, error, code }, status);
 }
 
+function mapErrorToCodeAndStatus(errorMsg: string): {
+  code: SessionApiError['code'];
+  status: number;
+  message: string;
+} {
+  const msg = errorMsg.toLowerCase();
+  
+  if (msg.includes('api key') || msg.includes('apikey') || msg.includes('unauthorized') || msg.includes('401')) {
+    return {
+      code: 'GEMINI_AUTH_ERROR',
+      status: 401,
+      message: 'Gemini API authentication failed. Please check your API key.',
+    };
+  }
+  if (msg.includes('not found') || msg.includes('404')) {
+    return {
+      code: 'GEMINI_MODEL_NOT_FOUND',
+      status: 404,
+      message: 'The requested Gemini model could not be found.',
+    };
+  }
+  if (msg.includes('quota') || msg.includes('rate limit') || msg.includes('429') || msg.includes('exhausted')) {
+    return {
+      code: 'GEMINI_RATE_LIMIT',
+      status: 429,
+      message: 'Gemini API rate limit exceeded. Please try again in a few seconds.',
+    };
+  }
+  if (msg.includes('503') || msg.includes('unavailable') || msg.includes('high demand') || msg.includes('fetch')) {
+    return {
+      code: 'GEMINI_UNAVAILABLE',
+      status: 503,
+      message: 'Gemini service is temporarily unavailable or experiencing high demand.',
+    };
+  }
+  if (msg.includes('timed out') || msg.includes('timeout') || msg.includes('deadline')) {
+    return {
+      code: 'GEMINI_TIMEOUT',
+      status: 504,
+      message: 'The request to Gemini timed out. Please try again.',
+    };
+  }
+  if (msg.includes('validation') || msg.includes('parse') || msg.includes('zod')) {
+    return {
+      code: 'VALIDATION_ERROR',
+      status: 422,
+      message: 'Failed to validate the response structure from the AI engine.',
+    };
+  }
+  if (msg.includes('graph')) {
+    return {
+      code: 'GRAPH_ERROR',
+      status: 500,
+      message: 'LangGraph orchestration encountered an internal error.',
+    };
+  }
+  return {
+    code: 'INTERNAL_ERROR',
+    status: 500,
+    message: errorMsg,
+  };
+}
+
 /**
  * Strip internal-only fields from a TwinProblem before sending to the browser.
  * correctAnswer and reasoning are withheld until the student has attempted.
@@ -178,6 +241,7 @@ export async function POST(
       ...createInitialLearningState(sessionId),
       sessionId,
       conceptId: seedProblem.conceptId,
+      stage: 'seed',
       currentProblem: {
         problemId: seedProblem.problemId,
         conceptId: seedProblem.conceptId,
@@ -225,6 +289,7 @@ export async function POST(
       ...createInitialLearningState(sessionId),
       sessionId,
       conceptId: seedProblem.conceptId,
+      stage: 'twin',
       currentProblem: {
         problemId: seedProblem.problemId,
         conceptId: seedProblem.conceptId,
@@ -244,29 +309,27 @@ export async function POST(
   }
 
   // ── 5. Invoke LangGraph ─────────────────────────────────────────────────
+  console.log('[API] /api/session START');
+  console.log('[API] graph START');
+  const graphStartTime = Date.now();
   let finalState: GraphStateType;
   try {
     finalState = await invokeWithTimeout(graphInput);
+    console.log(`[API] graph END ${Date.now() - graphStartTime}ms`);
+    console.log(`[ConceptTwin] Total graph: ${Date.now() - graphStartTime} ms`);
   } catch (err) {
     const message =
       err instanceof Error ? err.message : 'An unexpected error occurred.';
-    const isTimeout = message.includes('timed out');
-    return errorResponse(
-      message,
-      isTimeout ? 'TIMEOUT' : 'INTERNAL_ERROR',
-      isTimeout ? 504 : 500
-    );
+    console.error(`[ConceptTwin] Total graph failed after ${Date.now() - graphStartTime} ms: ${message}`);
+    const mapped = mapErrorToCodeAndStatus(message);
+    return errorResponse(mapped.message, mapped.code, mapped.status);
   }
 
   // ── 6. Check for graph-level errors ────────────────────────────────────
   if (finalState.lastError) {
-    // Log the full error server-side; send only a sanitised message.
     console.error('[/api/session] Graph error:', finalState.lastError);
-    return errorResponse(
-      `AI Engine Error: ${finalState.lastError}`,
-      'INTERNAL_ERROR',
-      500
-    );
+    const mapped = mapErrorToCodeAndStatus(finalState.lastError);
+    return errorResponse(`AI Engine Error: ${mapped.message}`, mapped.code, mapped.status);
   }
 
   // Cache the generated twin on the server so it can be reconstructed securely in stage B
@@ -330,5 +393,6 @@ export async function POST(
     ...(verification && { verification }),
   };
 
+  console.log(`[API] /api/session END ${Date.now() - graphStartTime}ms`);
   return json<SessionApiResponse>(response, 200);
 }

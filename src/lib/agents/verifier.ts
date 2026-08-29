@@ -57,6 +57,8 @@ export const MAX_TWIN_CYCLES = 3;
 export async function verifierNode(
   state: GraphStateType
 ): Promise<Partial<GraphStateType>> {
+  const startTime = Date.now();
+
   // ── Guards ────────────────────────────────────────────────────────────────
   if (!state.generatedTwin) {
     return {
@@ -92,12 +94,13 @@ export async function verifierNode(
     });
 
     // ── Call Gemini ───────────────────────────────────────────────────────
-    // Low temperature: this is a critical validation pass — we want determinism.
+    // Low thinking level: this is a critical validation pass — we want determinism and speed.
     const rawResult = await generateJSON<VerificationResult>(user, {
       systemInstruction: system,
-      temperature: 0.2,
       maxOutputTokens: 1024,
       responseSchema: VERIFICATION_RESPONSE_SCHEMA,
+      thinkingLevel: 'LOW',
+      label: 'Verifier',
     });
 
     // ── Safety: force 'remediate' if max cycles exceeded ──────────────────
@@ -131,9 +134,12 @@ export async function verifierNode(
           : 'developing';
     }
 
+    console.log(`[ConceptTwin] Verifier: ${Date.now() - startTime} ms`);
+
     return stateUpdate;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[ConceptTwin] Verifier failed after ${Date.now() - startTime} ms: ${message}`);
     return { lastError: `verifierNode error: ${message}` };
   }
 }

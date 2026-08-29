@@ -174,6 +174,8 @@ export const LearningStateSchema = z.object({
   // ---- Workflow control ----
   /** The last error that occurred in any node (used for debugging). */
   lastError: z.string().nullable(),
+  /** The active session stage */
+  stage: z.enum(['seed', 'twin']),
 });
 
 export type LearningState = z.infer<typeof LearningStateSchema>;
@@ -197,5 +199,6 @@ export function createInitialLearningState(sessionId: string): LearningState {
     masteryLevel: 'unknown',
     twinCycleCount: 0,
     lastError: null,
+    stage: 'seed',
   };
 }

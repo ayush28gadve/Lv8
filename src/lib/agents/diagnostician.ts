@@ -42,6 +42,8 @@ import type { GraphStateType } from '@/lib/orchestration/state';
 export async function diagnosticianNode(
   state: GraphStateType
 ): Promise<Partial<GraphStateType>> {
+  const startTime = Date.now();
+
   // ── Guards ────────────────────────────────────────────────────────────────
   if (!state.currentProblem) {
     return { lastError: 'diagnosticianNode: currentProblem is null.' };
@@ -76,16 +78,19 @@ export async function diagnosticianNode(
     });
 
     // ── Call Gemini ───────────────────────────────────────────────────────
-    // Use lower temperature for diagnosis — we want precise, deterministic output.
+    // Use lower temperature/thinking for diagnosis — we want precise, deterministic output.
     const rawResult = await generateJSON<DiagnosisResult>(user, {
       systemInstruction: system,
-      temperature: 0.3,
       maxOutputTokens: 1024,
       responseSchema: DIAGNOSIS_RESPONSE_SCHEMA,
+      thinkingLevel: 'LOW',
+      label: 'Diagnostician',
     });
 
     // ── Validate via Zod ──────────────────────────────────────────────────
     const diagnosis = DiagnosisResultSchema.parse(rawResult);
+
+    console.log(`[ConceptTwin] Diagnostician: ${Date.now() - startTime} ms`);
 
     return {
       diagnosis,
@@ -93,6 +98,7 @@ export async function diagnosticianNode(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[ConceptTwin] Diagnostician failed after ${Date.now() - startTime} ms: ${message}`);
     return { lastError: `diagnosticianNode error: ${message}` };
   }
 }
