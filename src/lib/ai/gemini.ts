@@ -51,13 +51,13 @@ export const genai = { get client() { return getGenAI(); } };
  * Primary reasoning model – used for evaluation and diagnosis.
  * Flash models are preferred for latency-sensitive demo workloads.
  */
-export const PRIMARY_MODEL = 'gemini-2.0-flash';
+export const PRIMARY_MODEL = 'gemini-3.6-flash';
 
 /**
  * Structured output model – used when strict JSON schema compliance is required
  * (twin generation, verification output parsing).
  */
-export const STRUCTURED_MODEL = 'gemini-2.0-flash';
+export const STRUCTURED_MODEL = 'gemini-3.6-flash';
 
 // ---------------------------------------------------------------------------
 // Helper types & utilities
@@ -72,7 +72,100 @@ export interface GenerateOptions {
   maxOutputTokens?: number;
   /** Temperature (0–2). Lower = more deterministic. */
   temperature?: number;
+  /** Optional structured JSON schema */
+  responseSchema?: Record<string, unknown>;
 }
+
+// ---------------------------------------------------------------------------
+// OpenAPI Schemas for Strict JSON compliance
+// ---------------------------------------------------------------------------
+
+export const EVALUATION_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    isCorrect: { type: 'BOOLEAN' },
+    hasCorrectReasoning: { type: 'BOOLEAN' },
+    studentAnswer: { type: 'STRING' },
+    expectedAnswer: { type: 'STRING' },
+    identifiedMistakes: { type: 'ARRAY', items: { type: 'STRING' } },
+    score: { type: 'INTEGER' },
+    summary: { type: 'STRING' }
+  },
+  required: [
+    'isCorrect',
+    'hasCorrectReasoning',
+    'studentAnswer',
+    'expectedAnswer',
+    'identifiedMistakes',
+    'score',
+    'summary'
+  ]
+};
+
+export const DIAGNOSIS_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    misconceptionType: { type: 'STRING' },
+    conceptualGap: { type: 'STRING' },
+    deepStructureFailure: { type: 'STRING' },
+    isSurfacePatternMatcher: { type: 'BOOLEAN' },
+    remediationStrategy: { type: 'STRING' },
+    confidence: { type: 'NUMBER' }
+  },
+  required: [
+    'misconceptionType',
+    'conceptualGap',
+    'deepStructureFailure',
+    'isSurfacePatternMatcher',
+    'remediationStrategy',
+    'confidence'
+  ]
+};
+
+export const TWIN_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    twinId: { type: 'STRING' },
+    conceptId: { type: 'STRING' },
+    question: { type: 'STRING' },
+    correctAnswer: { type: 'STRING' },
+    unit: { type: 'STRING' },
+    reasoning: { type: 'STRING' },
+    twinRationale: { type: 'STRING' },
+    difficulty: { type: 'STRING', enum: ['easy', 'medium', 'hard'] }
+  },
+  required: [
+    'twinId',
+    'conceptId',
+    'question',
+    'correctAnswer',
+    'unit',
+    'reasoning',
+    'twinRationale',
+    'difficulty'
+  ]
+};
+
+export const VERIFICATION_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    isValid: { type: 'BOOLEAN' },
+    preservesDeepStructure: { type: 'BOOLEAN' },
+    hasDifferentSurface: { type: 'BOOLEAN' },
+    issues: { type: 'ARRAY', items: { type: 'STRING' } },
+    nextAction: { type: 'STRING', enum: ['accept', 'regenerate', 'remediate'] },
+    studentTransferred: { type: 'BOOLEAN' },
+    twinAttemptScore: { type: 'INTEGER' },
+    transferFeedback: { type: 'STRING' }
+  },
+  required: [
+    'isValid',
+    'preservesDeepStructure',
+    'hasDifferentSurface',
+    'issues',
+    'nextAction'
+  ]
+};
 
 /**
  * Lightweight wrapper around the Gemini generateContent API.
@@ -87,6 +180,7 @@ export async function generateText(
     systemInstruction,
     maxOutputTokens = 2048,
     temperature = 0.4,
+    responseSchema,
   } = options;
 
   const response = await genai.client.models.generateContent({
@@ -98,6 +192,12 @@ export async function generateText(
     config: {
       maxOutputTokens,
       temperature,
+      ...(responseSchema
+        ? {
+            responseMimeType: 'application/json',
+            responseSchema,
+          }
+        : {}),
     },
   });
 

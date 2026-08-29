@@ -22,7 +22,7 @@
  *   - diagnosis       (DiagnosisResult)
  */
 
-import { generateJSON } from '@/lib/ai/gemini';
+import { generateJSON, DIAGNOSIS_RESPONSE_SCHEMA } from '@/lib/ai/gemini';
 import {
   DiagnosisResultSchema,
   type DiagnosisResult,
@@ -81,6 +81,7 @@ export async function diagnosticianNode(
       systemInstruction: system,
       temperature: 0.3,
       maxOutputTokens: 1024,
+      responseSchema: DIAGNOSIS_RESPONSE_SCHEMA,
     });
 
     // ── Validate via Zod ──────────────────────────────────────────────────

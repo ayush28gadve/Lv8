@@ -30,7 +30,7 @@
  *   - masteryLevel    (updated to 'mastered' if student transferred successfully)
  */
 
-import { generateJSON } from '@/lib/ai/gemini';
+import { generateJSON, VERIFICATION_RESPONSE_SCHEMA } from '@/lib/ai/gemini';
 import {
   VerificationResultSchema,
   type VerificationResult,
@@ -97,6 +97,7 @@ export async function verifierNode(
       systemInstruction: system,
       temperature: 0.2,
       maxOutputTokens: 1024,
+      responseSchema: VERIFICATION_RESPONSE_SCHEMA,
     });
 
     // ── Safety: force 'remediate' if max cycles exceeded ──────────────────

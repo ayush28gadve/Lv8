@@ -19,7 +19,7 @@
  *   - twinCycleCount   (+1 via increment reducer)
  */
 
-import { generateJSON } from '@/lib/ai/gemini';
+import { generateJSON, TWIN_RESPONSE_SCHEMA } from '@/lib/ai/gemini';
 import {
   TwinProblemSchema,
   type TwinProblem,
@@ -96,6 +96,7 @@ export async function twinGeneratorNode(
       systemInstruction: system,
       temperature: 0.6,
       maxOutputTokens: 2048,
+      responseSchema: TWIN_RESPONSE_SCHEMA,
     });
 
     // ── Validate via Zod ──────────────────────────────────────────────────

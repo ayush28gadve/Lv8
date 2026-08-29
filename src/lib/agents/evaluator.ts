@@ -16,7 +16,7 @@
  *   - masteryLevel       (updated based on evaluation)
  */
 
-import { callWithRetry } from '@/lib/ai/gemini';
+import { callWithRetry, EVALUATION_RESPONSE_SCHEMA } from '@/lib/ai/gemini';
 import {
   EvaluationResultSchema,
   type EvaluationResult,
@@ -67,7 +67,11 @@ export async function evaluatorNode(
       user,
       system,
       3,
-      { temperature: 0.2, maxOutputTokens: 1024 }
+      { 
+        temperature: 0.2, 
+        maxOutputTokens: 1024,
+        responseSchema: EVALUATION_RESPONSE_SCHEMA 
+      }
     );
 
     // ── Validate via Zod ──────────────────────────────────────────────────

@@ -263,7 +263,7 @@ export async function POST(
     // Log the full error server-side; send only a sanitised message.
     console.error('[/api/session] Graph error:', finalState.lastError);
     return errorResponse(
-      'The AI engine encountered an error. Please try again.',
+      `AI Engine Error: ${finalState.lastError}`,
       'INTERNAL_ERROR',
       500
     );
