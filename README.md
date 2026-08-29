@@ -154,31 +154,6 @@ concept-twin/
 
 ---
 
-## Getting Started
-
-### 1. Prerequisites
-*   Node.js (v18.x or higher)
-*   Gemini API Key (obtain from [Google AI Studio](https://aistudio.google.com/app/apikey))
-
-### 2. Installation
-```bash
-npm install
-```
-
-### 3. Environment Variables
-Create a local `.env.local` file in the root directory:
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-### 4. Running the Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) inside your browser.
-
----
-
 ## Development / Build Commands
 
 Validate changes and compile assets using these scripts:
