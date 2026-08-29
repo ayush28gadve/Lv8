@@ -126,6 +126,11 @@ async function invokeWithTimeout(
 }
 
 // ---------------------------------------------------------------------------
+// Server-side in-memory twin cache
+// ---------------------------------------------------------------------------
+const twinCache = new Map<string, TwinProblem>();
+
+// ---------------------------------------------------------------------------
 // POST handler
 // ---------------------------------------------------------------------------
 
@@ -197,6 +202,22 @@ export async function POST(
       );
     }
 
+    // Retrieve the full twin problem from the server-side cache if available
+    let resolvedTwin = twinCache.get(payload.twinId);
+    if (!resolvedTwin) {
+      // Reconstruct using payload data and dummy values for the omitted ground truth
+      resolvedTwin = {
+        twinId: payload.twinProblem.twinId,
+        conceptId: payload.twinProblem.conceptId,
+        question: payload.twinProblem.question,
+        correctAnswer: payload.twinProblem.correctAnswer ?? 0,
+        unit: payload.twinProblem.unit,
+        reasoning: payload.twinProblem.reasoning ?? '',
+        twinRationale: payload.twinProblem.twinRationale,
+        difficulty: payload.twinProblem.difficulty,
+      };
+    }
+
     // Re-construct the trusted currentProblem from the knowledge layer.
     // The client's copy of twinProblem contains the question and metadata
     // but the server holds the authoritative correctAnswer.
@@ -213,9 +234,8 @@ export async function POST(
         reasoning: seedProblem.reasoning,
         difficulty: seedProblem.difficulty,
       },
-      // The twin problem is supplied by the client but has been validated above.
-      // The evaluator + verifier will use twinProblem.correctAnswer (server-held).
-      generatedTwin: payload.twinProblem,
+      // The twin problem is supplied by the client but populated with cached ground truth
+      generatedTwin: resolvedTwin,
       // The student's attempt at the twin goes into twinAttempt.
       twinAttempt: `Working: ${payload.working}\nFinal Answer: ${payload.finalAnswer}`,
       studentWorking: payload.working,
@@ -247,6 +267,11 @@ export async function POST(
       'INTERNAL_ERROR',
       500
     );
+  }
+
+  // Cache the generated twin on the server so it can be reconstructed securely in stage B
+  if (finalState.generatedTwin) {
+    twinCache.set(finalState.generatedTwin.twinId, finalState.generatedTwin);
   }
 
   // ── 7. Build browser-safe response ─────────────────────────────────────
