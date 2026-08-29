@@ -1,24 +1,33 @@
 /**
- * Verifier Agent Node — ConceptTwin
+ * Verifier Agent Node — ConceptTwin (Phase 2B: Live Gemini)
  *
  * Responsibility:
- *   Verify that a generated twin problem is:
- *     (a) physically and mathematically valid (answer follows from reasoning),
- *     (b) preserving the deep structural invariants of the concept,
- *     (c) sufficiently different at the surface level from the original problem.
+ *   Two-phase verification:
+ *
+ *   Phase A — Twin quality check (always runs):
+ *     Verify the generated twin problem is:
+ *       (a) physically and mathematically valid,
+ *       (b) preserving deep structural invariants,
+ *       (c) sufficiently different at the surface level.
+ *
+ *   Phase B — Conceptual transfer check (runs when twinAttempt is in state):
+ *     Evaluate whether the student demonstrated genuine conceptual transfer
+ *     when attempting the twin problem — not just surface pattern-matching.
  *
  *   The verification result drives a conditional routing decision:
- *     - 'accept'     → serve the twin to the student
+ *     - 'accept'     → serve/accept the twin; update mastery if student transferred
  *     - 'regenerate' → loop back to twinGeneratorNode
- *     - 'remediate'  → flag for human / simplified follow-up
+ *     - 'remediate'  → max cycles exceeded or unresolvable physics
  *
  * Input consumed from graph state:
  *   - currentProblem  (original problem for comparison)
  *   - generatedTwin   (the twin to verify)
+ *   - twinAttempt     (optional: student's working on the twin)
  *   - conceptId       (to retrieve concept invariants)
  *
  * Output written to graph state:
- *   - verification    (VerificationResult)
+ *   - verification    (VerificationResult, including transfer assessment if applicable)
+ *   - masteryLevel    (updated to 'mastered' if student transferred successfully)
  */
 
 import { generateJSON } from '@/lib/ai/gemini';
@@ -50,7 +59,10 @@ export async function verifierNode(
 ): Promise<Partial<GraphStateType>> {
   // ── Guards ────────────────────────────────────────────────────────────────
   if (!state.generatedTwin) {
-    return { lastError: 'verifierNode: generatedTwin is null. Run twinGeneratorNode first.' };
+    return {
+      lastError:
+        'verifierNode: generatedTwin is null. Run twinGeneratorNode first.',
+    };
   }
   if (!state.currentProblem) {
     return { lastError: 'verifierNode: currentProblem is null.' };
@@ -67,7 +79,7 @@ export async function verifierNode(
   }
 
   try {
-    // ── Build prompt ─────────────────────────────────────────────────────────
+    // ── Build prompt ──────────────────────────────────────────────────────
     const { system, user } = buildVerifierPrompt({
       twinQuestion: state.generatedTwin.question,
       twinAnswer: state.generatedTwin.correctAnswer,
@@ -75,35 +87,22 @@ export async function verifierNode(
       twinReasoning: state.generatedTwin.reasoning,
       originalQuestion: state.currentProblem.question,
       invariableElements: concept.twinGenerationConstraints.invariableElements,
+      // Pass the student's twin attempt if available (Phase B transfer check).
+      twinAttempt: state.twinAttempt,
     });
 
-    // TODO (Phase 2B): Replace stub with Gemini API call.
-    // TODO (Phase 2B): Consider a secondary deterministic physics solver for numerical validation.
-    //
-    // const rawResult = await generateJSON<VerificationResult>(user, {
-    //   systemInstruction: system,
-    //   temperature: 0.2,  // Low temperature for critical validation tasks.
-    // });
+    // ── Call Gemini ───────────────────────────────────────────────────────
+    // Low temperature: this is a critical validation pass — we want determinism.
+    const rawResult = await generateJSON<VerificationResult>(user, {
+      systemInstruction: system,
+      temperature: 0.2,
+      maxOutputTokens: 1024,
+    });
 
-    // ── Stub for Phase 2A ─────────────────────────────────────────────────
-    // Stub always accepts so the graph can complete a full cycle in testing.
-    const rawResult: VerificationResult = {
-      isValid: true,
-      preservesDeepStructure: true,
-      hasDifferentSurface: true,
-      issues: [],
-      nextAction: 'accept',
-    };
-
-    // Reference prompt builder to prevent unused import lint errors.
-    void system;
-    void user;
-    void generateJSON;
-
-    // ── Safety: escalate if max cycles exceeded ───────────────────────────
+    // ── Safety: force 'remediate' if max cycles exceeded ──────────────────
     if (state.twinCycleCount >= MAX_TWIN_CYCLES && !rawResult.isValid) {
       rawResult.nextAction = 'remediate';
-      rawResult.issues.push(
+      (rawResult.issues as string[]).push(
         `Max twin cycles (${MAX_TWIN_CYCLES}) reached. Escalating to remediation.`
       );
     }
@@ -111,10 +110,27 @@ export async function verifierNode(
     // ── Validate via Zod ──────────────────────────────────────────────────
     const verification = VerificationResultSchema.parse(rawResult);
 
-    return {
+    // ── Update mastery based on transfer result ───────────────────────────
+    // Only update masteryLevel when the student has actually attempted the twin.
+    const stateUpdate: Partial<GraphStateType> = {
       verification,
       lastError: null,
     };
+
+    if (verification.studentTransferred === true) {
+      stateUpdate.masteryLevel = 'mastered';
+    } else if (
+      verification.studentTransferred === false &&
+      state.twinAttempt !== null
+    ) {
+      // Student attempted but did not transfer — needs more remediation.
+      stateUpdate.masteryLevel =
+        state.twinCycleCount >= MAX_TWIN_CYCLES - 1
+          ? 'needs_remediation'
+          : 'developing';
+    }
+
+    return stateUpdate;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { lastError: `verifierNode error: ${message}` };

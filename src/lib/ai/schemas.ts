@@ -99,6 +99,14 @@ export const VerificationResultSchema = z.object({
   issues: z.array(z.string()),
   /** Recommended next action based on verification outcome. */
   nextAction: z.enum(['accept', 'regenerate', 'remediate']),
+
+  // ---- Student twin-attempt fields (populated when twinAttempt is present) ----
+  /** Whether the student demonstrated conceptual transfer on the twin problem. */
+  studentTransferred: z.boolean().optional(),
+  /** Score for the student's twin attempt (0–100). */
+  twinAttemptScore: z.number().min(0).max(100).optional(),
+  /** Feedback on the student's twin attempt for display in the UI. */
+  transferFeedback: z.string().optional(),
 });
 
 export type VerificationResult = z.infer<typeof VerificationResultSchema>;

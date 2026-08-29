@@ -1,11 +1,13 @@
 /**
- * TwinGenerator Agent Node — ConceptTwin
+ * TwinGenerator Agent Node — ConceptTwin (Phase 2B: Live Gemini)
  *
  * Responsibility:
  *   Generate a "Conceptual Twin" problem that:
  *     (a) preserves the deep structural invariants of the concept,
  *     (b) changes surface features (context, numbers, scenario),
- *     (c) is specifically designed to expose the diagnosed misconception.
+ *     (c) is specifically designed to expose the diagnosed misconception,
+ *     (d) provides its own ground-truth answer and step-by-step reasoning
+ *         for the verifier to check against.
  *
  * Input consumed from graph state:
  *   - currentProblem   (original seed problem for reference)
@@ -13,7 +15,7 @@
  *   - conceptId        (to retrieve concept metadata)
  *
  * Output written to graph state:
- *   - generatedTwin    (TwinProblem)
+ *   - generatedTwin    (TwinProblem with embedded ground-truth answer)
  *   - twinCycleCount   (+1 via increment reducer)
  */
 
@@ -42,7 +44,10 @@ export async function twinGeneratorNode(
     return { lastError: 'twinGeneratorNode: currentProblem is null.' };
   }
   if (!state.diagnosis) {
-    return { lastError: 'twinGeneratorNode: diagnosis is missing. Run diagnosticianNode first.' };
+    return {
+      lastError:
+        'twinGeneratorNode: diagnosis is missing. Run diagnosticianNode first.',
+    };
   }
   if (!state.conceptId) {
     return { lastError: 'twinGeneratorNode: conceptId is null.' };
@@ -57,7 +62,8 @@ export async function twinGeneratorNode(
 
   try {
     // ── Derive difficulty ─────────────────────────────────────────────────
-    // Progressively increase difficulty with each twin cycle.
+    // Progressively increase difficulty with each twin cycle so the student
+    // is challenged incrementally rather than thrown into hard problems immediately.
     const difficulty: 'easy' | 'medium' | 'hard' =
       state.twinCycleCount >= 2
         ? 'hard'
@@ -65,7 +71,7 @@ export async function twinGeneratorNode(
           ? 'medium'
           : 'easy';
 
-    // ── Build prompt ─────────────────────────────────────────────────────────
+    // ── Build prompt ──────────────────────────────────────────────────────
     const { system, user } = buildTwinGeneratorPrompt({
       conceptId: concept.conceptId,
       conceptName: concept.name,
@@ -73,7 +79,8 @@ export async function twinGeneratorNode(
       surfaceFeatures: concept.surfaceFeatures,
       twinGenerationConstraints: {
         invariableElements: concept.twinGenerationConstraints.invariableElements,
-        variableSurfaceFeatures: concept.twinGenerationConstraints.variableSurfaceFeatures,
+        variableSurfaceFeatures:
+          concept.twinGenerationConstraints.variableSurfaceFeatures,
       },
       originalQuestion: state.currentProblem.question,
       originalAnswer: state.currentProblem.correctAnswer,
@@ -82,39 +89,21 @@ export async function twinGeneratorNode(
       difficulty,
     });
 
-    // TODO (Phase 2B): Replace stub with Gemini API call.
-    // TODO (Phase 2B): Add physics constraint validator to catch impossible numerical values.
-    // TODO (Phase 2B): Implement twin uniqueness check against problem history.
-    //
-    // const rawResult = await generateJSON<TwinProblem>(user, {
-    //   systemInstruction: system,
-    //   temperature: 0.7,  // Slightly higher for creativity in surface variation.
-    // });
-
-    // ── Stub for Phase 2A ─────────────────────────────────────────────────
-    const rawResult: TwinProblem = {
-      twinId: `twin-stub-${state.twinCycleCount + 1}`,
-      conceptId: state.conceptId,
-      question: 'TODO: Generated twin question — replace with Gemini response.',
-      correctAnswer: 0,
-      unit: 'TODO',
-      reasoning: 'TODO: Full step-by-step reasoning from Gemini.',
-      twinRationale:
-        'TODO: Explanation of what surface features changed and what deep structure was preserved.',
-      difficulty,
-    };
-
-    // Reference prompt builder to prevent unused import lint errors.
-    void system;
-    void user;
-    void generateJSON;
+    // ── Call Gemini ───────────────────────────────────────────────────────
+    // Slightly higher temperature for creativity in surface-feature variation,
+    // while staying deterministic enough to produce valid physics.
+    const rawResult = await generateJSON<TwinProblem>(user, {
+      systemInstruction: system,
+      temperature: 0.6,
+      maxOutputTokens: 2048,
+    });
 
     // ── Validate via Zod ──────────────────────────────────────────────────
     const generatedTwin = TwinProblemSchema.parse(rawResult);
 
     return {
       generatedTwin,
-      // twinCycleCount increments by 1 via the increment reducer.
+      // twinCycleCount increments by 1 via the increment reducer in state.ts.
       twinCycleCount: 1,
       lastError: null,
     };

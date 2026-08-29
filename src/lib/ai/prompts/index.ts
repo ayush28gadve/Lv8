@@ -212,48 +212,63 @@ export interface VerifierPromptArgs {
   twinReasoning: string;
   originalQuestion: string;
   invariableElements: string[];
+  /** Optional: the student's working/answer on the twin problem. */
+  twinAttempt?: string | null;
 }
 
 export function buildVerifierPrompt(args: VerifierPromptArgs): {
   system: string;
   user: string;
 } {
-  const system = `You are a physics problem verifier for Class 11-12 mechanics.
-Your task is to verify that a generated twin problem is physically valid and serves its pedagogical purpose.
+  const hasAttempt = !!(args.twinAttempt && args.twinAttempt.trim().length > 0);
+
+  const system = `You are a physics problem verifier and learning assessor for Class 11-12 mechanics.
+You have two responsibilities:
+
+1. TWIN QUALITY CHECK: Verify the generated twin problem is physically valid and pedagogically sound.
+2. CONCEPTUAL TRANSFER CHECK (only when student attempt is provided): Assess whether the student demonstrated genuine conceptual understanding on the twin — not just surface pattern-matching.
 
 VERIFICATION RULES:
-1. Confirm the answer follows from the reasoning using correct physics.
+1. Confirm the twin's answer follows from the reasoning using correct physics.
 2. Confirm the twin preserves the stated invariable elements (deep structure).
 3. Confirm the twin has meaningfully different surface features from the original.
 4. Flag any physically impossible values (e.g. μ_k > μ_s, negative mass, angle ≥ 90°).
-- Respond ONLY with a valid JSON object matching the VerificationResult schema.
 
-VERIFICATIONRESULT SCHEMA:
+TRANSFER ASSESSMENT RULES (when student attempt is provided):
+- Check whether the student applied the SAME deep reasoning steps to the new surface context.
+- Distinguish between a student who re-derived the method vs. one who memorised the answer format.
+- Award twinAttemptScore 0–100 based on conceptual quality, not just numerical correctness.
+- Set studentTransferred = true only if the student showed genuine conceptual transfer.
+
+RESPOND ONLY with a valid JSON object. No markdown, no prose.
+
+SCHEMA:
 {
   "isValid": boolean,
   "preservesDeepStructure": boolean,
   "hasDifferentSurface": boolean,
   "issues": string[],
-  "nextAction": "accept" | "regenerate" | "remediate"
+  "nextAction": "accept" | "regenerate" | "remediate",
+  "studentTransferred": boolean (required if student attempt provided, omit otherwise),
+  "twinAttemptScore": number 0-100 (required if student attempt provided, omit otherwise),
+  "transferFeedback": string (required if student attempt provided, omit otherwise)
 }`;
 
-  const user = `ORIGINAL PROBLEM:
-${args.originalQuestion}
+  const userParts: string[] = [
+    `ORIGINAL PROBLEM:\n${args.originalQuestion}`,
+    `INVARIABLE ELEMENTS TO PRESERVE:\n${args.invariableElements.map((e, i) => `${i + 1}. ${e}`).join('\n')}`,
+    `TWIN PROBLEM:\n${args.twinQuestion}`,
+    `TWIN ANSWER: ${args.twinAnswer} ${args.twinUnit}`,
+    `TWIN REASONING:\n${args.twinReasoning}`,
+  ];
 
-INVARIABLE ELEMENTS TO PRESERVE:
-${args.invariableElements.map((e, i) => `${i + 1}. ${e}`).join('\n')}
+  if (hasAttempt) {
+    userParts.push(`STUDENT'S ATTEMPT ON TWIN:\n${args.twinAttempt}`);
+  }
 
-TWIN PROBLEM:
-${args.twinQuestion}
+  userParts.push('Verify and respond with the JSON object only.');
 
-TWIN ANSWER: ${args.twinAnswer} ${args.twinUnit}
-
-TWIN REASONING:
-${args.twinReasoning}
-
-Verify and respond with the JSON object only.`;
-
-  return { system, user };
+  return { system, user: userParts.join('\n\n') };
 }
 
 // ============================================================================

@@ -1,10 +1,16 @@
 /**
- * Diagnostician Agent Node — ConceptTwin
+ * Diagnostician Agent Node — ConceptTwin (Phase 2B: Live Gemini)
  *
  * Responsibility:
  *   Perform deep root-cause analysis of the student's conceptual error.
  *   Goes beyond identifying the wrong answer to pinpointing WHICH part of
  *   the deep structure the student has misunderstood.
+ *
+ *   Three distinct error categories are distinguished:
+ *     1. Conceptual misunderstanding: Wrong physics model applied.
+ *     2. Procedural/calculation error: Correct model but arithmetic mistake.
+ *     3. Surface pattern-matching: Got the answer right but by rote formula,
+ *        not genuine understanding (caught by evaluator's hasCorrectReasoning=false).
  *
  * Input consumed from graph state:
  *   - currentProblem  (for question context)
@@ -41,7 +47,10 @@ export async function diagnosticianNode(
     return { lastError: 'diagnosticianNode: currentProblem is null.' };
   }
   if (!state.evaluation) {
-    return { lastError: 'diagnosticianNode: evaluation is missing. Run evaluatorNode first.' };
+    return {
+      lastError:
+        'diagnosticianNode: evaluation is missing. Run evaluatorNode first.',
+    };
   }
   if (!state.conceptId) {
     return { lastError: 'diagnosticianNode: conceptId is null.' };
@@ -55,7 +64,7 @@ export async function diagnosticianNode(
   }
 
   try {
-    // ── Build prompt ─────────────────────────────────────────────────────────
+    // ── Build prompt ──────────────────────────────────────────────────────
     const { system, user } = buildDiagnosticianPrompt({
       question: state.currentProblem.question,
       conceptName: concept.name,
@@ -66,27 +75,13 @@ export async function diagnosticianNode(
       identifiedMistakes: state.evaluation.identifiedMistakes,
     });
 
-    // TODO (Phase 2B): Replace stub with Gemini API call.
-    // TODO (Phase 2B): Experiment with chain-of-thought prompting for better diagnosis accuracy.
-    //
-    // const rawResult = await generateJSON<DiagnosisResult>(user, {
-    //   systemInstruction: system,
-    // });
-
-    // ── Stub for Phase 2A ─────────────────────────────────────────────────
-    const rawResult: DiagnosisResult = {
-      misconceptionType: 'TODO: Populate via Gemini',
-      conceptualGap: 'TODO: Diagnostician stub — replace with Gemini response.',
-      deepStructureFailure: 'TODO: Identify specific deep structure failure.',
-      isSurfacePatternMatcher: false,
-      remediationStrategy: 'TODO: Define remediation strategy for twin generator.',
-      confidence: 0,
-    };
-
-    // Reference prompt builder to prevent unused import lint errors.
-    void system;
-    void user;
-    void generateJSON;
+    // ── Call Gemini ───────────────────────────────────────────────────────
+    // Use lower temperature for diagnosis — we want precise, deterministic output.
+    const rawResult = await generateJSON<DiagnosisResult>(user, {
+      systemInstruction: system,
+      temperature: 0.3,
+      maxOutputTokens: 1024,
+    });
 
     // ── Validate via Zod ──────────────────────────────────────────────────
     const diagnosis = DiagnosisResultSchema.parse(rawResult);

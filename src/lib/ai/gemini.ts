@@ -129,3 +129,33 @@ export async function generateJSON<T>(
 
   return JSON.parse(cleaned) as T;
 }
+
+/**
+ * Call Gemini with automatic retries on JSON parse failures.
+ * On each retry the temperature is raised slightly to break repetition loops.
+ *
+ * @param userPrompt   The user-turn content.
+ * @param systemPrompt System instruction prepended by Gemini.
+ * @param maxAttempts  Maximum attempts before rethrowing the last error.
+ */
+export async function callWithRetry<T>(
+  userPrompt: string,
+  systemPrompt: string,
+  maxAttempts = 3,
+  baseOptions: Omit<GenerateOptions, 'systemInstruction'> = {}
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await generateJSON<T>(userPrompt, {
+        ...baseOptions,
+        systemInstruction: systemPrompt,
+        temperature: (baseOptions.temperature ?? 0.2) + attempt * 0.1,
+      });
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+

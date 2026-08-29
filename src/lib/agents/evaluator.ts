@@ -1,5 +1,5 @@
 /**
- * Evaluator Agent Node — ConceptTwin
+ * Evaluator Agent Node — ConceptTwin (Phase 2B: Live Gemini)
  *
  * Responsibility:
  *   Assess whether the student's final answer AND reasoning are correct for
@@ -25,6 +25,35 @@ import { buildEvaluatorPrompt } from '@/lib/ai/prompts';
 import type { GraphStateType } from '@/lib/orchestration/state';
 
 // ---------------------------------------------------------------------------
+// Safe JSON extraction with retry
+// ---------------------------------------------------------------------------
+
+/**
+ * Attempt to call Gemini and parse structured JSON with up to `maxAttempts`.
+ * On parse failure, retries with slightly higher temperature to break repetition.
+ */
+async function callGeminiWithRetry<T>(
+  userPrompt: string,
+  systemPrompt: string,
+  maxAttempts = 3
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await generateJSON<T>(userPrompt, {
+        systemInstruction: systemPrompt,
+        temperature: 0.2 + attempt * 0.1,
+        maxOutputTokens: 1024,
+      });
+    } catch (err) {
+      lastError = err;
+      // Continue to retry
+    }
+  }
+  throw lastError;
+}
+
+// ---------------------------------------------------------------------------
 // Node implementation
 // ---------------------------------------------------------------------------
 
@@ -37,7 +66,7 @@ import type { GraphStateType } from '@/lib/orchestration/state';
 export async function evaluatorNode(
   state: GraphStateType
 ): Promise<Partial<GraphStateType>> {
-  // ── Guard ─────────────────────────────────────────────────────────────────
+  // ── Guards ────────────────────────────────────────────────────────────────
   if (!state.currentProblem) {
     return {
       lastError: 'evaluatorNode: currentProblem is null. Cannot evaluate.',
@@ -51,9 +80,8 @@ export async function evaluatorNode(
   }
 
   try {
-    // Build prompt (not used in stub; will be passed to Gemini in Phase 2B).
-    // Prefixed with void to satisfy ESLint no-unused-vars in stub mode.
-    void buildEvaluatorPrompt({
+    // ── Build prompt ──────────────────────────────────────────────────────
+    const { system, user } = buildEvaluatorPrompt({
       question: state.currentProblem.question,
       correctAnswer: state.currentProblem.correctAnswer,
       unit: state.currentProblem.unit,
@@ -62,41 +90,26 @@ export async function evaluatorNode(
       studentFinalAnswer: state.studentFinalAnswer,
     });
 
-    // TODO (Phase 2B): Replace with actual Gemini call once API key is configured.
-    // TODO (Phase 2B): Add retry logic with exponential backoff for transient failures.
-    //
-    // const rawResult = await generateJSON<EvaluationResult>(
-    //   `${system}\n\n${user}`,
-    //   { systemInstruction: system }
-    // );
-
-    // ── Stub output for Phase 2A build verification ───────────────────────
-    // This stub simulates a realistic evaluator response so the rest of the
-    // graph can be wired and tested end-to-end without a live API key.
-    const rawResult: EvaluationResult = {
-      isCorrect: false,
-      hasCorrectReasoning: false,
-      studentAnswer: state.studentFinalAnswer,
-      expectedAnswer: state.currentProblem.correctAnswer,
-      identifiedMistakes: [
-        'TODO: Populate via Gemini API call in Phase 2B.',
-      ],
-      score: 0,
-      summary: 'TODO: Evaluator stub — replace with Gemini response.',
-    };
-
-    // Reference generateJSON to prevent "unused import" lint warnings.
-    void generateJSON;
+    // ── Call Gemini ───────────────────────────────────────────────────────
+    const rawResult = await callGeminiWithRetry<EvaluationResult>(
+      user,
+      system
+    );
 
     // ── Validate via Zod ──────────────────────────────────────────────────
     const evaluation = EvaluationResultSchema.parse(rawResult);
 
     // ── Derive mastery level from evaluation ──────────────────────────────
-    const masteryLevel = evaluation.isCorrect && evaluation.hasCorrectReasoning
-      ? 'mastered'
-      : evaluation.isCorrect && !evaluation.hasCorrectReasoning
-        ? 'surface'
-        : 'developing';
+    // Three cases:
+    //   1. Correct answer + correct reasoning → mastered
+    //   2. Correct answer but flawed reasoning → surface pattern-matcher
+    //   3. Wrong answer → developing or needs remediation
+    const masteryLevel =
+      evaluation.isCorrect && evaluation.hasCorrectReasoning
+        ? 'mastered'
+        : evaluation.isCorrect && !evaluation.hasCorrectReasoning
+          ? 'surface'
+          : 'developing';
 
     return {
       evaluation,
