@@ -3,18 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { getAllConcepts } from '@/data/concepts';
 import { getProblemsByConcept } from '@/data/problems';
+import { PhysicsDiagram } from '@/components/PhysicsDiagram';
 import type { ConceptId, PhysicsConcept } from '@/types/physics';
 import type { SessionApiResponse, SessionApiResult, ApiTwinProblem, SessionApiError, HandwritingAnalysisResult } from '@/lib/api/types';
 
 // Tutor progressive analysis stages
 const TUTOR_ANALYSIS_STAGES = [
-  'Reading your solution...',
-  'Understanding your reasoning...',
-  'Checking governing principles...',
-  'Comparing your physics approach...',
-  'Identifying potential gaps...',
-  'Estimating concept mastery...',
-  'Building next challenge...',
+  'Reading Solution',
+  'Evaluating Reasoning',
+  'Detecting Concept Gaps',
+  'Building ConceptTwin',
+  'Verifying Understanding',
 ];
 
 // The list of concepts in order of prerequisites
@@ -283,6 +282,7 @@ export default function Home() {
   // Submit attempt
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     // Perform vision validation before normal checks if image tab is selected
     if (submissionType === 'image') {
@@ -740,6 +740,10 @@ export default function Home() {
                   <p className="text-[14px] leading-relaxed text-text-primary mb-3">
                     {currentProblem.question}
                   </p>
+
+                  <div className="my-4 flex justify-center w-full animate-transition">
+                    <PhysicsDiagram problemId={currentProblem.problemId} />
+                  </div>
 
                   {activeStage === 'seed' && !apiResult && (
                     <div className="flex items-center space-x-2 bg-bg-secondary/45 p-2 rounded-lg border border-border-default/50">

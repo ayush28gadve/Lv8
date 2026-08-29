@@ -112,6 +112,16 @@ export interface SeedProblem {
   commonMistakes: string[];
   givenData?: Record<string, number | string>;
   targetVariable?: string;
+
+  // Rich diagnostic parameters
+  fbdExpectations?: string[];
+  governingEquations?: string[];
+  conceptTags?: string[];
+  diagramMetadata?: {
+    hasDiagram: boolean;
+    description: string;
+    imageUrl?: string;
+  };
   
   // Optional PYQ specific metadata
   pyqMetadata?: PyqMetadata;

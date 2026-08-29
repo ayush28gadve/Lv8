@@ -197,6 +197,8 @@ const twinCache = new Map<string, TwinProblem>();
 // POST handler
 // ---------------------------------------------------------------------------
 
+const activeSessions = new Set<string>();
+
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<SessionApiResponse> | NextResponse<SessionApiError>> {
@@ -218,7 +220,20 @@ export async function POST(
   }
 
   const payload = parsed.data;
+
+  if (payload.sessionId && activeSessions.has(payload.sessionId)) {
+    console.warn(`[Session API] Blocked concurrent request for sessionId: ${payload.sessionId}`);
+    return errorResponse(
+      'Evaluation already in progress for this session. Please wait.',
+      'GEMINI_RATE_LIMIT',
+      429
+    );
+  }
+
   const sessionId = payload.sessionId ?? randomUUID();
+  activeSessions.add(sessionId);
+
+  try {
 
   // ── 3. Load trusted seed problem from knowledge layer ───────────────────
   // The client supplies only problemId; the server fetches the full problem
@@ -393,6 +408,9 @@ export async function POST(
     ...(verification && { verification }),
   };
 
-  console.log(`[API] /api/session END ${Date.now() - graphStartTime}ms`);
-  return json<SessionApiResponse>(response, 200);
+    console.log(`[API] /api/session END ${Date.now() - graphStartTime}ms`);
+    return json<SessionApiResponse>(response, 200);
+  } finally {
+    activeSessions.delete(sessionId);
+  }
 }

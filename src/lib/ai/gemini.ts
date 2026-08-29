@@ -68,6 +68,8 @@ export interface GenerateOptions {
   thinkingLevel?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';
   /** Descriptive name for logging timing/errors */
   label?: string;
+  /** Optional unique request transaction ID */
+  requestId?: string;
   /** Optional base64 image details for vision tasks */
   image?: {
     inlineData: {
@@ -191,8 +193,109 @@ export const HANDWRITING_ANALYSIS_RESPONSE_SCHEMA = {
 };
 
 /**
- * Lightweight wrapper around the Gemini generateContent API.
- * Returns the raw text of the first candidate's first text part.
+ * Global task queue to execute Gemini requests sequentially with a minimum spacing
+ * of 1.5 seconds, avoiding simultaneous concurrent connection bursts.
+ */
+class GeminiRequestQueue {
+  private queue: {
+    task: () => Promise<unknown>;
+    resolve: (value: unknown) => void;
+    reject: (reason?: unknown) => void;
+  }[] = [];
+  private processing = false;
+  private lastRequestTime = 0;
+  private minSpacingMs = 1500;
+
+  enqueue<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.queue.push({
+        task: fn,
+        resolve: resolve as (value: unknown) => void,
+        reject: reject as (reason?: unknown) => void,
+      });
+      this.processNext();
+    });
+  }
+
+  private async processNext() {
+    if (this.processing || this.queue.length === 0) return;
+    this.processing = true;
+
+    while (this.queue.length > 0) {
+      const next = this.queue.shift();
+      if (!next) continue;
+
+      const now = Date.now();
+      const timeSinceLast = now - this.lastRequestTime;
+      const waitTime = Math.max(0, this.minSpacingMs - timeSinceLast);
+
+      if (waitTime > 0) {
+        console.log(`[Gemini Queue] Delaying next request by ${waitTime}ms to throttle burst limits...`);
+        await new Promise((res) => setTimeout(res, waitTime));
+      }
+
+      this.lastRequestTime = Date.now();
+
+      try {
+        const result = await next.task();
+        next.resolve(result);
+      } catch (err) {
+        next.reject(err);
+      }
+    }
+
+    this.processing = false;
+  }
+}
+
+export const globalGeminiQueue = new GeminiRequestQueue();
+
+interface ErrantResponse {
+  headers?: Record<string, string> | { get?: (name: string) => string | null };
+  response?: {
+    headers?: Record<string, string> | { get?: (name: string) => string | null };
+  };
+  statusText?: {
+    headers?: Record<string, string> | { get?: (name: string) => string | null };
+  };
+}
+
+/**
+ * Checks for any retry-after headers or parameters in Google GenAI SDK errors.
+ * Returns duration in milliseconds if found, otherwise null.
+ */
+function getRetryAfterMs(err: unknown): number | null {
+  if (!err || typeof err !== 'object') return null;
+  const errWithHeaders = err as ErrantResponse;
+  const headers = errWithHeaders.headers || errWithHeaders.response?.headers || errWithHeaders.statusText?.headers;
+  if (!headers) return null;
+
+  try {
+    let retryAfter: string | null = null;
+    if ('get' in headers && typeof headers.get === 'function') {
+      retryAfter = headers.get('retry-after') || headers.get('Retry-After');
+    } else {
+      const headersRecord = headers as Record<string, string>;
+      retryAfter = headersRecord['retry-after'] || headersRecord['Retry-After'];
+    }
+
+    if (retryAfter) {
+      const seconds = parseInt(retryAfter, 10);
+      if (!isNaN(seconds) && seconds > 0) {
+        return seconds * 1000;
+      }
+    }
+  } catch {
+    // Suppress header checking exceptions
+  }
+  return null;
+}
+
+/**
+ * Centralized wrapper around the Gemini generateContent API.
+ * Detects rate limits (429/RESOURCE_EXHAUSTED) and performs up to 2 retries (with 2s and 5s delays).
+ * Staggered through a global queue to prevent simultaneous burst calls.
+ * Writes detailed server-side logs for auditing.
  */
 export async function generateText(
   prompt: string,
@@ -205,62 +308,101 @@ export async function generateText(
     responseSchema,
     thinkingLevel,
     label = 'Gemini Call',
+    requestId = Math.random().toString(36).substring(2, 10),
   } = options;
 
-  console.log(`[Gemini] ${label} START`);
-  const start = Date.now();
-  try {
-    const response = await genai.client.models.generateContent({
-      model,
-      contents: [
-        {
-          role: 'user',
-          parts: options.image
-            ? [
-                { text: prompt },
-                {
-                  inlineData: {
-                    data: options.image.inlineData.data,
-                    mimeType: options.image.inlineData.mimeType,
-                  },
-                },
-              ]
-            : [{ text: prompt }],
-        },
-      ],
-      config: {
-        maxOutputTokens,
-        ...(systemInstruction ? { systemInstruction } : {}),
-        ...(thinkingLevel
-          ? {
-              thinkingConfig: model.includes('3.7') || model.includes('3.6')
-                ? { thinkingLevel: thinkingLevel as unknown as ThinkingLevel }
-                : { thinkingBudget: thinkingLevel === 'MINIMAL' || thinkingLevel === 'LOW' ? 1024 : 2048 }
-            }
-          : {}),
-        ...(responseSchema
-          ? {
-              responseMimeType: 'application/json',
-              responseSchema,
-            }
-          : {}),
-      },
-    });
+  const maxAttempts = 3; // 1 initial + 2 retries
+  let lastError: unknown;
 
-    const text = response.text;
-    if (!text) {
-      throw new Error('[ConceptTwin] Gemini returned an empty response.');
+  // Enqueue the request to run sequentially with space throttling
+  return globalGeminiQueue.enqueue(async () => {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const start = Date.now();
+      const startTimestamp = new Date().toISOString();
+      console.log(`[Gemini Request Log] [${requestId}] [${label}] Attempt ${attempt}/${maxAttempts} START | Model=${model} | Time=${startTimestamp}`);
+
+      try {
+        const response = await genai.client.models.generateContent({
+          model,
+          contents: [
+            {
+              role: 'user',
+              parts: options.image
+                ? [
+                    { text: prompt },
+                    {
+                      inlineData: {
+                        data: options.image.inlineData.data,
+                        mimeType: options.image.inlineData.mimeType,
+                      },
+                    },
+                  ]
+                : [{ text: prompt }],
+            },
+          ],
+          config: {
+            maxOutputTokens,
+            ...(systemInstruction ? { systemInstruction } : {}),
+            ...(thinkingLevel
+              ? {
+                  thinkingConfig: model.includes('3.7') || model.includes('3.6')
+                    ? { thinkingLevel: thinkingLevel as unknown as ThinkingLevel }
+                    : { thinkingBudget: thinkingLevel === 'MINIMAL' || thinkingLevel === 'LOW' ? 1024 : 2048 }
+                }
+              : {}),
+            ...(responseSchema
+              ? {
+                  responseMimeType: 'application/json',
+                  responseSchema,
+                }
+              : {}),
+          },
+        });
+
+        const text = response.text;
+        if (!text) {
+          throw new Error('[ConceptTwin] Gemini returned an empty response.');
+        }
+
+        const duration = Date.now() - start;
+        console.log(`[Gemini Request Log] [${requestId}] [${label}] Attempt ${attempt} SUCCESS | Duration=${duration}ms`);
+        return text;
+      } catch (err) {
+        lastError = err;
+        const duration = Date.now() - start;
+        const message = err instanceof Error ? err.message : String(err);
+        const errObj = err as unknown as { status?: unknown; code?: unknown };
+        const errStatus = (errObj.status as number) || (errObj.code as number) || 0;
+
+        const isRateLimit =
+          errStatus === 429 ||
+          message.includes('429') ||
+          message.toUpperCase().includes('RESOURCE_EXHAUSTED') ||
+          message.toUpperCase().includes('RATE_LIMIT') ||
+          message.toUpperCase().includes('QUOTA');
+
+        console.error(
+          `[Gemini Request Log] [${requestId}] [${label}] Attempt ${attempt} FAILURE | ` +
+          `Duration=${duration}ms | HTTP Code=${errStatus || 'N/A'} | Is429=${isRateLimit} | Error="${message}"`
+        );
+
+        if (isRateLimit && attempt < maxAttempts) {
+          // Check for header-provided delay first, otherwise back off 2s / 5s
+          const headerDelay = getRetryAfterMs(err);
+          const delayMs = headerDelay ?? (attempt === 1 ? 2000 : 5000);
+          
+          console.warn(
+            `[Gemini Rate Limit] [${requestId}] [${label}] model="${model}" received rate limit/quota warning. ` +
+            `Retrying in ${delayMs}ms (retry-after source: ${headerDelay ? 'Header' : 'Exponential Backoff'})...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        } else {
+          throw err;
+        }
+      }
     }
-    console.log(`[Gemini] ${label} END ${Date.now() - start}ms`);
-    return text;
-  } catch (err) {
-    const duration = Date.now() - start;
-    const message = err instanceof Error ? err.message : String(err);
-    const errObj = err as unknown as { status?: unknown; code?: unknown };
-    const status = errObj.status || errObj.code || 'N/A';
-    console.error(`[Gemini] ${label} ERROR after ${duration}ms\nstatus=${status}\nmessage=${message}`);
-    throw err;
-  }
+    throw lastError;
+  });
 }
 
 /**
@@ -312,7 +454,7 @@ export async function callWithRetry<T>(
       const errObj = err as unknown as { status?: unknown; code?: unknown };
       const errStatus = (errObj.status as number) || (errObj.code as number) || 0;
       
-      // Do NOT retry permanent errors (400, 401, 403, 404)
+      // Do NOT retry permanent errors (400, 401, 403, 404) or rate limit errors (429) inside JSON parse retry
       const isPermanent = 
         errStatus === 400 || 
         errStatus === 401 || 
@@ -325,8 +467,15 @@ export async function callWithRetry<T>(
         message.includes('INVALID_ARGUMENT') ||
         message.includes('API key');
         
-      if (isPermanent) {
-        console.error(`[Gemini Retry] Permanent error encountered (status=${errStatus}). Aborting retry. Error: ${message}`);
+      const isRateLimit =
+        errStatus === 429 ||
+        message.includes('429') ||
+        message.toUpperCase().includes('RESOURCE_EXHAUSTED') ||
+        message.toUpperCase().includes('RATE_LIMIT') ||
+        message.toUpperCase().includes('QUOTA');
+        
+      if (isPermanent || isRateLimit) {
+        console.error(`[Gemini Retry] Error requires immediate abort (status=${errStatus}, rateLimit=${isRateLimit}). Aborting retry. Error: ${message}`);
         throw err;
       }
       
