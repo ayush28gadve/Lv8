@@ -61,8 +61,8 @@ export default function Home() {
 
   // Temporary Onboarding Form States
   const [onboardingName, setOnboardingName] = useState<string>('');
-  const [onboardingClass, setOnboardingClass] = useState<'11' | '12'>('11');
-  const [onboardingExam, setOnboardingExam] = useState<'JEE' | 'NEET' | 'Board'>('JEE');
+  const [onboardingClass, setOnboardingClass] = useState<'11' | '12'>('12');
+  const [onboardingExam, setOnboardingExam] = useState<'JEE' | 'NEET' | 'Board'>('NEET');
   const [onboardingConcept, setOnboardingConcept] = useState<ConceptId>('fbd-force-identification');
 
   // Vision / Handwriting Submission States
@@ -691,7 +691,7 @@ export default function Home() {
         </header>
 
         {/* Main Content Workspace Split Panel */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
           {/* Left Panel: Problem Statement & Physics context */}
           <section className="w-[45%] flex-shrink-0 border-r border-border-default bg-bg-secondary/20 flex flex-col overflow-y-auto animate-fadeIn">
             <div className="px-6 py-4 border-b border-border-default flex items-center justify-between flex-shrink-0">
@@ -1129,71 +1129,85 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
               )}
             </form>
           </section>
-        </div>
+          {/* Ambient Loader Overlay */}
+          {isSubmitting && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center p-8 z-40 select-none animate-fadeIn">
+              {/* Central Processing Glass Card */}
+              <div className="bg-bg-card/90 border border-border-default/80 rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center space-y-6 text-center animate-[slideUp_0.4s_ease-out_forwards]">
+                
+                {/* AI Core Animation */}
+                <div className="relative w-44 h-44 flex items-center justify-center">
+                  {/* Outer Orbit Ring 1 */}
+                  <div className="absolute inset-0 border border-dashed border-accent-dark/35 rounded-full animate-[spin_10s_linear_infinite]" />
+                  {/* Outer Orbit Ring 2 */}
+                  <div className="absolute w-36 h-36 border border-accent-dark/20 rounded-full animate-[spin_6s_linear_infinite_reverse]" />
+                  {/* Orbiting Particle 1 */}
+                  <div className="absolute w-2 h-2 bg-accent-dark rounded-full animate-[spin_4s_linear_infinite] origin-[88px_88px] shadow-[0_0_8px_rgba(0,143,140,0.8)]" />
+                  {/* Orbiting Particle 2 */}
+                  <div className="absolute w-1.5 h-1.5 bg-accent-dark/60 rounded-full animate-[spin_3s_linear_infinite_reverse] origin-[72px_72px]" />
 
-        {/* Ambient Loader Overlay */}
-        {isSubmitting && (
-          <div className="absolute inset-0 bg-bg-secondary/95 backdrop-blur-md flex flex-col items-center justify-center p-8 z-40 select-none animate-fadeIn">
-            {/* 3D Depth Orbit Visual */}
-            <div className="relative w-36 h-36 flex items-center justify-center">
-              {/* Outer rotating orbit 1 */}
-              <div className="absolute inset-0 border border-dashed border-accent-dark/30 rounded-full animate-[spin_8s_linear_infinite]" />
-              {/* Outer rotating orbit 2 */}
-              <div className="absolute w-28 h-28 border border-accent-dark/20 rounded-full animate-[spin_5s_linear_infinite_reverse]" />
-              {/* Orbiting particle point */}
-              <div className="absolute w-2 h-2 bg-accent-dark rounded-full animate-[spin_3s_linear_infinite] origin-[68px_68px] shadow-[0_0_8px_rgba(0,143,140,0.8)]" />
-              
-              {/* Floating Core */}
-              <div className="relative w-14 h-14 bg-bg-card rounded-2xl border border-accent-border/40 shadow-xl flex items-center justify-center animate-[floatSlow_3s_ease-in-out_infinite]">
-                <div className="w-3.5 h-3.5 rounded-full bg-accent-dark animate-[pulseGlow_2s_ease-in-out_infinite]" />
+                  {/* Floating AI Core */}
+                  <div className="relative w-18 h-18 bg-bg-card rounded-2xl border border-accent-border/50 shadow-xl flex items-center justify-center animate-[floatSlow_3s_ease-in-out_infinite]">
+                    {/* Glowing Core center */}
+                    <div className="w-5 h-5 rounded-full bg-accent-dark animate-[pulseGlow_2s_ease-in-out_infinite]" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] tracking-widest uppercase font-extrabold text-accent-dark">AI Engine Processing</span>
+                  <h4 className="text-sm font-extrabold text-text-primary tracking-tight">AI Tutor is analyzing your solution</h4>
+                </div>
+
+                {/* Progress bar indicator */}
+                <div className="w-full bg-bg-secondary h-1 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-accent-dark h-full transition-all duration-500 rounded-full shadow-[0_0_8px_rgba(0,143,140,0.6)]"
+                    style={{ width: `${((tutorStep + 1) / TUTOR_ANALYSIS_STAGES.length) * 100}%` }}
+                  />
+                </div>
+
+                {/* Stages checklist */}
+                <div className="flex flex-col items-start space-y-2.5 w-full max-w-[280px] bg-bg-secondary/40 p-4 rounded-xl border border-border-default/50">
+                  {TUTOR_ANALYSIS_STAGES.map((stage, idx) => {
+                    const isCompleted = idx < tutorStep;
+                    const isActive = idx === tutorStep;
+                    return (
+                      <div
+                        key={stage}
+                        className={`flex items-center space-x-3 transition-all duration-300 ${
+                          isActive ? 'opacity-100 scale-[1.03]' : isCompleted ? 'opacity-55' : 'opacity-20'
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-extrabold border transition-all duration-300 ${
+                          isCompleted
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-600 shadow-sm'
+                            : isActive
+                              ? 'bg-accent-soft border-accent-dark text-accent-dark animate-pulse shadow-[0_0_8px_rgba(0,143,140,0.4)]'
+                              : 'bg-transparent border-border-default text-text-disabled'
+                        }`}>
+                          {isCompleted ? '✓' : ''}
+                        </div>
+                        <span className={`text-[11px] tracking-wide transition-all duration-300 ${
+                          isActive
+                            ? 'text-text-primary font-bold shadow-accent-dark/10 drop-shadow-sm'
+                            : isCompleted
+                              ? 'text-text-secondary font-medium'
+                              : 'text-text-disabled'
+                        }`}>
+                          {stage}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-
-            <div className="text-center mt-4 mb-2">
-              <span className="text-[10px] tracking-widest uppercase font-extrabold text-accent-dark">Tutor Assessment</span>
-              <h4 className="text-sm font-extrabold text-text-primary mt-1 tracking-tight">ConceptTwin is assessing your solution method</h4>
-            </div>
-
-            {/* Stages checklist */}
-            <div className="flex flex-col items-start space-y-2 mt-4 w-full max-w-[280px]">
-              {TUTOR_ANALYSIS_STAGES.map((stage, idx) => {
-                const isCompleted = idx < tutorStep;
-                const isActive = idx === tutorStep;
-                return (
-                  <div
-                    key={stage}
-                    className={`flex items-center space-x-2.5 transition-all duration-300 ${
-                      isActive ? 'opacity-100 scale-[1.02]' : isCompleted ? 'opacity-40' : 'opacity-15'
-                    }`}
-                  >
-                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-extrabold border ${
-                      isCompleted
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-600'
-                        : isActive
-                          ? 'bg-accent-soft border-accent-dark text-accent-dark animate-pulse shadow-sm'
-                          : 'bg-transparent border-border-default text-text-disabled'
-                    }`}>
-                      {isCompleted ? '✓' : ''}
-                    </div>
-                    <span className={`text-[11px] tracking-wide ${
-                      isActive
-                        ? 'text-text-primary font-bold'
-                        : isCompleted
-                          ? 'text-text-secondary font-medium'
-                          : 'text-text-disabled'
-                    }`}>
-                      {stage}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Feedback Overlay Panel (Slides up when evaluation is ready) */}
         {apiResult && (
-          <div className="border-t border-border-default bg-bg-secondary p-8 max-h-[50%] overflow-y-auto space-y-6 z-30 shadow-2xl relative">
+          <div className="border-t border-border-default bg-bg-secondary p-8 max-h-[50%] overflow-y-auto space-y-6 z-30 shadow-2xl relative animate-[slideUp_0.4s_ease-out_forwards]">
             {/* Top evaluation summary strip */}
             <div className="flex items-start justify-between">
               <div className="space-y-1">
