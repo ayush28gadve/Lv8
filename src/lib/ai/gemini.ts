@@ -68,6 +68,13 @@ export interface GenerateOptions {
   thinkingLevel?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';
   /** Descriptive name for logging timing/errors */
   label?: string;
+  /** Optional base64 image details for vision tasks */
+  image?: {
+    inlineData: {
+      data: string; // Base64 data (without metadata header)
+      mimeType: string;
+    };
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -161,6 +168,28 @@ export const VERIFICATION_RESPONSE_SCHEMA = {
   ]
 };
 
+export const HANDWRITING_ANALYSIS_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    extractedWorking: { type: 'STRING' },
+    extractedFinalAnswer: { type: 'STRING' },
+    detectedEquations: { type: 'ARRAY', items: { type: 'STRING' } },
+    reasoningSteps: { type: 'ARRAY', items: { type: 'STRING' } },
+    confidence: { type: 'NUMBER' },
+    unclearRegions: { type: 'ARRAY', items: { type: 'STRING' } },
+    isImageUnclear: { type: 'BOOLEAN' }
+  },
+  required: [
+    'extractedWorking',
+    'extractedFinalAnswer',
+    'detectedEquations',
+    'reasoningSteps',
+    'confidence',
+    'unclearRegions',
+    'isImageUnclear'
+  ]
+};
+
 /**
  * Lightweight wrapper around the Gemini generateContent API.
  * Returns the raw text of the first candidate's first text part.
@@ -183,7 +212,22 @@ export async function generateText(
   try {
     const response = await genai.client.models.generateContent({
       model,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [
+        {
+          role: 'user',
+          parts: options.image
+            ? [
+                { text: prompt },
+                {
+                  inlineData: {
+                    data: options.image.inlineData.data,
+                    mimeType: options.image.inlineData.mimeType,
+                  },
+                },
+              ]
+            : [{ text: prompt }],
+        },
+      ],
       config: {
         maxOutputTokens,
         ...(systemInstruction ? { systemInstruction } : {}),

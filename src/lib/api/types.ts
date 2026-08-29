@@ -202,3 +202,38 @@ export interface SessionApiError {
 }
 
 export type SessionApiResult = SessionApiResponse | SessionApiError;
+
+// ============================================================================
+// Handwriting Analysis — API Request/Response
+// ============================================================================
+
+export const HandwritingAnalysisRequestSchema = z.object({
+  /** Base64-encoded handwritten solution image (with or without data URL prefix) */
+  image: z.string().min(1),
+  /** Mime type of the image, e.g. "image/png" or "image/jpeg" */
+  mimeType: z.string().min(1),
+  /** The physics question statement for context */
+  question: z.string().min(1),
+});
+
+export type HandwritingAnalysisRequest = z.infer<typeof HandwritingAnalysisRequestSchema>;
+
+export const HandwritingAnalysisResultSchema = z.object({
+  /** Step-by-step working transcribed/extracted from handwriting */
+  extractedWorking: z.string(),
+  /** Final answer extracted from handwriting (number or string representation) */
+  extractedFinalAnswer: z.union([z.number(), z.string()]),
+  /** Physics formulas or equations detected in the solution */
+  detectedEquations: z.array(z.string()),
+  /** List of logical steps found in the solution */
+  reasoningSteps: z.array(z.string()),
+  /** Confidence in transcription accuracy (0.0 to 1.0) */
+  confidence: z.number().min(0).max(1),
+  /** Descriptions of blurry or hard-to-read parts, if any */
+  unclearRegions: z.array(z.string()),
+  /** Whether the image is unclear/unreadable, requiring a re-upload */
+  isImageUnclear: z.boolean(),
+});
+
+export type HandwritingAnalysisResult = z.infer<typeof HandwritingAnalysisResultSchema>;
+
