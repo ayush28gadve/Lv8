@@ -6,12 +6,15 @@ import { getProblemsByConcept } from '@/data/problems';
 import type { ConceptId, PhysicsConcept } from '@/types/physics';
 import type { SessionApiResponse, SessionApiResult, ApiTwinProblem, SessionApiError, HandwritingAnalysisResult } from '@/lib/api/types';
 
-// Progressive loader simulation texts
-const LOADER_TEXTS = [
-  'Parsing step-by-step mathematical reasoning...',
-  'Isolating physical invariants and coordinate systems...',
-  'Analyzing potential conceptual misconceptions...',
-  'Shaping custom conceptual transfer challenge...',
+// Tutor progressive analysis stages
+const TUTOR_ANALYSIS_STAGES = [
+  'Reading your solution...',
+  'Understanding your reasoning...',
+  'Checking governing principles...',
+  'Comparing your physics approach...',
+  'Identifying potential gaps...',
+  'Estimating concept mastery...',
+  'Building next challenge...',
 ];
 
 // The list of concepts in order of prerequisites
@@ -22,6 +25,19 @@ const CONCEPT_ORDER: ConceptId[] = [
   'inclined-plane',
   'connected-bodies-pulleys',
 ];
+
+const ParticlesBackground = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-20">
+    <div className="particle animate-float-particle" style={{ top: '12%', left: '15%', animationDelay: '0s', animationDuration: '9s' }} />
+    <div className="particle animate-float-particle" style={{ top: '28%', left: '85%', animationDelay: '2.5s', animationDuration: '12s' }} />
+    <div className="particle animate-float-particle" style={{ top: '48%', left: '18%', animationDelay: '4.5s', animationDuration: '10s' }} />
+    <div className="particle animate-float-particle" style={{ top: '68%', left: '72%', animationDelay: '1.2s', animationDuration: '14s' }} />
+    <div className="particle animate-float-particle" style={{ top: '88%', left: '28%', animationDelay: '5.5s', animationDuration: '11s' }} />
+    <div className="particle animate-float-particle" style={{ top: '15%', left: '92%', animationDelay: '3.5s', animationDuration: '8s' }} />
+    <div className="particle animate-float-particle" style={{ top: '58%', left: '48%', animationDelay: '6.5s', animationDuration: '13s' }} />
+    <div className="particle animate-float-particle" style={{ top: '92%', left: '82%', animationDelay: '2.8s', animationDuration: '9s' }} />
+  </div>
+);
 
 export default function Home() {
   const concepts = getAllConcepts();
@@ -70,15 +86,15 @@ export default function Home() {
   const [activeTwin, setActiveTwin] = useState<ApiTwinProblem | null>(null);
 
   // Progressive loader simulation state
-  const [loaderStep, setLoaderStep] = useState<number>(0);
+  const [tutorStep, setTutorStep] = useState<number>(0);
 
   // Loader interval simulation
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isSubmitting) {
       interval = setInterval(() => {
-        setLoaderStep((prev) => (prev < LOADER_TEXTS.length - 1 ? prev + 1 : prev));
-      }, 3500);
+        setTutorStep((prev) => (prev < TUTOR_ANALYSIS_STAGES.length - 1 ? prev + 1 : prev));
+      }, 700);
     }
     return () => clearInterval(interval);
   }, [isSubmitting]);
@@ -289,7 +305,7 @@ export default function Home() {
       return;
     }
 
-    setLoaderStep(0);
+    setTutorStep(0);
     setIsSubmitting(true);
     setError(null);
 
@@ -390,16 +406,18 @@ export default function Home() {
 
   if (!onboarded) {
     return (
-      <div className="min-h-screen w-screen bg-[#09090b] flex items-center justify-center p-6 relative overflow-hidden font-sans text-zinc-100 selection:bg-violet-500/30">
+      <div className="min-h-screen w-screen bg-background flex items-center justify-center p-6 relative overflow-hidden font-sans text-text-primary selection:bg-accent-brand/30">
+        <ParticlesBackground />
+        
         {/* Ambient radial lighting for high-quality aesthetics */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent-brand/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent-dark/5 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="bg-[#0c0c0e]/80 border border-zinc-800 backdrop-blur-md rounded-2xl p-8 max-w-lg w-full space-y-6 shadow-2xl relative z-10">
+        <div className="bg-bg-card border border-border-default rounded-2xl p-8 max-w-lg w-full space-y-6 shadow-lg relative z-10">
           <div className="flex flex-col items-center text-center space-y-2">
             <span className="text-3xl">✨</span>
-            <h1 className="text-2xl font-bold tracking-tight text-white mt-2">Welcome to ConceptTwin</h1>
-            <p className="text-xs text-zinc-400 max-w-xs">
+            <h1 className="text-2xl font-bold tracking-tight text-text-primary mt-2">Welcome to ConceptTwin</h1>
+            <p className="text-xs text-text-secondary max-w-xs">
               Establish deep, adaptive conceptual mastery in mechanics and solve conceptual transfer challenges.
             </p>
           </div>
@@ -407,29 +425,29 @@ export default function Home() {
           <form onSubmit={handleOnboardingSubmit} className="space-y-5">
             {/* Student Name */}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your Name</label>
+              <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Your Name</label>
               <input
                 type="text"
                 required
                 value={onboardingName}
                 onChange={(e) => setOnboardingName(e.target.value)}
                 placeholder="e.g. John Doe"
-                className="w-full bg-[#121215] border border-zinc-800 rounded-lg p-3 text-sm text-zinc-200 focus:outline-none focus:border-violet-500/80 transition"
+                className="w-full bg-bg-card border border-border-default rounded-lg p-3 text-sm text-text-primary focus:outline-none focus:border-border-active focus:ring-2 focus:ring-accent-brand/20 transition placeholder:text-text-disabled"
               />
             </div>
 
             {/* Class & Exam Grid */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Class Level</label>
-                <div className="grid grid-cols-2 bg-[#121215] p-1 rounded-lg border border-zinc-800/80">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Class Level</label>
+                <div className="grid grid-cols-2 bg-bg-secondary p-1 rounded-lg border border-border-default">
                   <button
                     type="button"
                     onClick={() => setOnboardingClass('11')}
                     className={`py-2 text-xs font-semibold rounded transition-all cursor-pointer ${
                       onboardingClass === '11'
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-accent-dark text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
                     Class 11
@@ -439,8 +457,8 @@ export default function Home() {
                     onClick={() => setOnboardingClass('12')}
                     className={`py-2 text-xs font-semibold rounded transition-all cursor-pointer ${
                       onboardingClass === '12'
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-accent-dark text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
                     Class 12
@@ -449,8 +467,8 @@ export default function Home() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Target Exam</label>
-                <div className="grid grid-cols-3 bg-[#121215] p-1 rounded-lg border border-zinc-800/80">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Target Exam</label>
+                <div className="grid grid-cols-3 bg-bg-secondary p-1 rounded-lg border border-border-default">
                   {(['JEE', 'NEET', 'Board'] as const).map((ex) => (
                     <button
                       key={ex}
@@ -458,8 +476,8 @@ export default function Home() {
                       onClick={() => setOnboardingExam(ex)}
                       className={`py-2 text-xs font-semibold rounded transition-all cursor-pointer ${
                         onboardingExam === ex
-                          ? 'bg-violet-600 text-white shadow-sm'
-                          : 'text-zinc-400 hover:text-zinc-200'
+                          ? 'bg-accent-dark text-white shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       {ex}
@@ -472,14 +490,14 @@ export default function Home() {
             {/* Subject & Chapter */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Subject</label>
-                <div className="w-full bg-[#121215]/50 border border-zinc-800/40 text-zinc-505 rounded-lg p-3 text-xs font-semibold cursor-not-allowed">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Subject</label>
+                <div className="w-full bg-bg-secondary/50 border border-border-default text-text-secondary rounded-lg p-3 text-xs font-semibold cursor-not-allowed">
                   Physics (Mechanics)
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Chapter</label>
-                <div className="w-full bg-[#121215]/50 border border-zinc-800/40 text-zinc-505 rounded-lg p-3 text-xs font-semibold truncate cursor-not-allowed">
+                <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Chapter</label>
+                <div className="w-full bg-bg-secondary/50 border border-border-default text-text-secondary rounded-lg p-3 text-xs font-semibold truncate cursor-not-allowed">
                   {"Newton's Laws & Friction"}
                 </div>
               </div>
@@ -487,7 +505,7 @@ export default function Home() {
 
             {/* Concept Selector Grid */}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Select Target Concept</label>
+              <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Select Target Concept</label>
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {getAllConcepts().map((concept) => (
                   <button
@@ -496,21 +514,21 @@ export default function Home() {
                     onClick={() => setOnboardingConcept(concept.conceptId)}
                     className={`w-full text-left p-3 rounded-lg border text-xs transition flex flex-col space-y-1 cursor-pointer ${
                       onboardingConcept === concept.conceptId
-                        ? 'border-violet-500 bg-violet-950/10'
-                        : 'border-zinc-800 bg-[#121215] hover:border-zinc-700/60'
+                        ? 'border-accent-dark bg-accent-soft/40 text-accent-dark'
+                        : 'border-border-default bg-bg-card hover:bg-bg-secondary/50 hover:border-border-hover text-text-secondary hover:text-text-primary'
                     }`}
                   >
-                    <span className={`font-semibold ${onboardingConcept === concept.conceptId ? 'text-violet-400' : 'text-zinc-200'}`}>
+                    <span className={`font-semibold ${onboardingConcept === concept.conceptId ? 'text-accent-dark font-bold' : 'text-text-primary'}`}>
                       {concept.name}
                     </span>
-                    <span className="text-[10px] text-zinc-450 truncate max-w-sm">{concept.description}</span>
+                    <span className="text-[10px] text-text-muted truncate max-w-sm">{concept.description}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-950/20 border border-red-900/40 text-red-400 p-3 rounded-lg text-xs leading-relaxed">
+              <div className="bg-error-bg border border-error-border text-error-text p-3 rounded-lg text-xs leading-relaxed">
                 {error}
               </div>
             )}
@@ -518,7 +536,7 @@ export default function Home() {
             {/* Begin Button */}
             <button
               type="submit"
-              className="w-full bg-violet-650 hover:bg-violet-600 text-white font-bold py-3 rounded-lg text-xs transition shadow-lg cursor-pointer"
+              className="w-full bg-accent-dark hover:bg-accent-dark/90 text-white font-bold py-3 rounded-lg text-xs transition shadow-sm hover:shadow cursor-pointer"
             >
               LAUNCH LEARNING WORKSPACE
             </button>
@@ -526,26 +544,23 @@ export default function Home() {
         </div>
       </div>
     );
-  }
-
-  return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#09090b] font-sans text-zinc-100 selection:bg-violet-500/30">
+  }  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-background font-sans text-text-primary selection:bg-accent-brand/35 relative">
+      <ParticlesBackground />
+      
       {/* Sidebar: Concept Map */}
-      <aside className="w-80 flex-shrink-0 border-r border-zinc-800 bg-[#0c0c0e] flex flex-col">
-        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs tracking-wider uppercase font-semibold text-zinc-500">Hackathon MVP</span>
-            <span className="text-xl font-bold tracking-tight text-white mt-1">ConceptTwin</span>
-          </div>
-          <span className="text-xs bg-zinc-800/80 px-2.5 py-1 rounded-full text-zinc-300 border border-zinc-700/50">
+      <aside className="w-60 flex-shrink-0 border-r border-border-default bg-bg-secondary flex flex-col z-10">
+        <div className="p-4 border-b border-border-default flex items-center justify-between">
+          <span className="text-lg font-extrabold tracking-tight text-text-primary">ConceptTwin</span>
+          <span className="text-[10px] bg-bg-card px-2 py-0.5 rounded-full text-text-secondary border border-border-default shadow-sm font-semibold">
             {masteredConcepts.size}/{concepts.length} Mastered
           </span>
         </div>
 
         {/* subway-line Concept Navigation */}
-        <nav className="flex-1 overflow-y-auto px-6 py-8">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-6">Concept Pathway</h2>
-          <div className="relative pl-6 border-l border-zinc-800/80 space-y-8">
+        <nav className="flex-1 overflow-y-auto px-4 py-6">
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-4">Concept Pathway</h2>
+          <div className="relative pl-5 border-l border-border-default space-y-5">
             {CONCEPT_ORDER.map((cid, i) => {
               const concept = concepts.find((c) => c.conceptId === cid);
               if (!concept) return null;
@@ -557,16 +572,16 @@ export default function Home() {
                 <div key={cid} className="relative group">
                   {/* subway connector node */}
                   <div
-                    className={`absolute -left-[31px] top-1.5 w-[11px] h-[11px] rounded-full border-2 transition-all duration-300 ${
+                    className={`absolute -left-[25px] top-1.5 w-[9px] h-[9px] rounded-full border-2 transition-all duration-300 ${
                       status === 'mastered'
-                        ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+                        ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
                         : status === 'remediation'
-                          ? 'bg-amber-500 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                          ? 'bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.25)]'
                           : status === 'active'
-                            ? 'bg-[#09090b] border-violet-500 scale-125 shadow-[0_0_12px_rgba(139,92,246,0.5)] animate-pulse'
+                            ? 'bg-bg-card border-accent-dark scale-125 shadow-[0_0_6px_rgba(0,143,140,0.25)] animate-pulse'
                             : status === 'unlocked'
-                              ? 'bg-[#09090b] border-zinc-600'
-                              : 'bg-zinc-800 border-zinc-800'
+                              ? 'bg-bg-card border-border-hover'
+                              : 'bg-border-default border-border-default'
                     }`}
                   />
 
@@ -574,15 +589,15 @@ export default function Home() {
                     disabled={status === 'locked'}
                     onClick={() => handleConceptSelect(cid)}
                     className={`w-full text-left flex flex-col transition-all ${
-                      status === 'locked' ? 'opacity-40 cursor-not-allowed' : 'hover:translate-x-1'
+                      status === 'locked' ? 'opacity-40 cursor-not-allowed' : 'hover:translate-x-0.5'
                     }`}
                   >
-                    <span className="text-[10px] font-semibold tracking-widest text-zinc-500 uppercase">
-                      0{i + 1} — {status.toUpperCase()}
+                    <span className="text-[9px] font-bold tracking-widest text-text-muted uppercase">
+                      0{i + 1} — {status}
                     </span>
                     <span
-                      className={`text-sm font-semibold tracking-tight mt-0.5 ${
-                        isActive ? 'text-violet-400' : 'text-zinc-300 group-hover:text-white'
+                      className={`text-xs font-semibold tracking-tight mt-0.5 leading-snug ${
+                        isActive ? 'text-accent-dark font-extrabold' : 'text-text-secondary group-hover:text-text-primary'
                       }`}
                     >
                       {concept.name}
@@ -596,61 +611,78 @@ export default function Home() {
       </aside>
 
       {/* Main Grid Workspace */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Top Header Bar with Profile & Visual Stepper */}
-        <header className="bg-[#0b0b0c] border-b border-zinc-800 p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 z-20 flex-shrink-0">
+      <main className="flex-1 flex flex-col overflow-hidden relative z-1">
+        <header className="bg-bg-secondary border-b border-border-default px-6 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 z-20 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <span className="text-base font-bold tracking-tight text-white">Learning Pathway</span>
+            <span className="text-sm font-extrabold tracking-tight text-text-primary uppercase mr-2 border-r border-border-default pr-3">Learning Pathway</span>
             {studentInfo && (
-              <div className="flex items-center space-x-2 bg-zinc-900/60 px-3 py-1 rounded-full border border-zinc-800 text-[11px] text-zinc-400">
-                <span className="font-semibold text-zinc-350">{studentInfo.name}</span>
-                <span className="text-zinc-650">•</span>
-                <span>Class {studentInfo.classLevel}</span>
-                <span className="text-zinc-650">•</span>
-                <span className="text-violet-400 font-bold uppercase">{studentInfo.exam}</span>
+              <div className="flex flex-col space-y-0.5">
+                <span className="text-xs font-bold text-text-primary leading-none">{studentInfo.name}</span>
+                <div className="flex items-center space-x-1 text-[9px] text-text-secondary font-semibold">
+                  <span>Class {studentInfo.classLevel}</span>
+                  <span className="text-text-disabled">•</span>
+                  <span className="text-accent-dark font-extrabold uppercase">{studentInfo.exam}</span>
+                  <span className="text-text-disabled">•</span>
+                  <button
+                    onClick={() => setOnboarded(false)}
+                    className="hover:text-text-secondary transition underline cursor-pointer"
+                  >
+                    Change Target
+                  </button>
+                </div>
               </div>
             )}
-            <button
-              onClick={() => setOnboarded(false)}
-              className="text-[10px] text-zinc-500 hover:text-zinc-300 transition underline cursor-pointer"
-            >
-              Change Target
-            </button>
           </div>
 
           {/* Stepper Progression */}
-          <div className="flex items-center space-x-2 md:space-x-3 overflow-x-auto pb-1 lg:pb-0">
+          <div className="flex items-center overflow-x-auto pb-1 lg:pb-0">
             {(['PYQ', 'Solution', 'Eval', 'Gap', 'Twin', 'Transfer', 'Mastery'] as const).map((step, idx) => {
               const status = getStepStatus(step);
               const label =
                 step === 'Solution' ? 'Solution' :
-                step === 'Eval' ? 'AI Evaluation' :
-                step === 'Gap' ? 'Concept Gap' :
-                step === 'Twin' ? 'ConceptTwin' :
-                step === 'Transfer' ? 'Transfer Test' :
+                step === 'Eval' ? 'Analysis' :
+                step === 'Gap' ? 'Gap' :
+                step === 'Twin' ? 'Twin' :
+                step === 'Transfer' ? 'Transfer' :
                 step === 'Mastery' ? 'Mastery' : 'PYQ';
 
               return (
-                <div key={step} className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
-                  {idx > 0 && <span className="text-zinc-700 text-xs">→</span>}
-                  <div
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase transition-all duration-300 ${
+                <div key={step} className="flex items-center flex-shrink-0">
+                  {idx > 0 && (
+                    <div className={`h-[1px] w-3 md:w-5 mx-1 md:mx-1.5 ${
                       status === 'completed'
-                        ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-400'
+                        ? 'bg-emerald-300'
                         : status === 'active'
-                          ? 'bg-violet-950/20 border-violet-500 text-violet-400 animate-pulse shadow-[0_0_8px_rgba(139,92,246,0.2)]'
+                          ? 'bg-accent-dark/50'
+                          : 'bg-border-default'
+                    }`} />
+                  )}
+                  <div className="flex items-center space-x-1">
+                    {/* Dot Indicator */}
+                    <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-[8px] font-extrabold transition-all duration-300 ${
+                      status === 'completed'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                        : status === 'active'
+                          ? 'bg-accent-dark border-accent-dark text-white shadow-[0_0_8px_rgba(0,143,140,0.3)]'
                           : status === 'bypassed'
-                            ? 'border-zinc-800 border-dashed text-zinc-500 bg-zinc-950/10'
-                            : 'border-zinc-850 text-zinc-600 bg-zinc-950/5'
-                    }`}
-                  >
-                    <span>
-                      {status === 'completed' ? '✓' :
-                       status === 'bypassed' ? '—' :
-                       status === 'locked' ? '🔒' : (idx + 1)}
+                            ? 'border-border-hover border-dashed text-text-muted bg-transparent'
+                            : 'border-border-default text-text-disabled bg-bg-card/50'
+                    }`}>
+                      {status === 'completed' ? '✓' : (idx + 1)}
+                    </div>
+                    {/* Label */}
+                    <span className={`text-[9px] font-extrabold uppercase tracking-wider ${
+                      status === 'completed'
+                        ? 'text-text-muted font-medium'
+                        : status === 'active'
+                          ? 'text-accent-dark font-extrabold'
+                          : status === 'bypassed'
+                            ? 'text-text-muted font-medium'
+                            : 'text-text-disabled'
+                    }`}>
+                      {label}
                     </span>
-                    <span>{label}</span>
-                    {status === 'bypassed' && <span className="text-[8px] bg-zinc-800 px-1 rounded text-zinc-500">Bypassed</span>}
+                    {status === 'bypassed' && <span className="text-[7px] bg-bg-secondary border border-border-default px-1 rounded text-text-muted font-medium">Bypassed</span>}
                   </div>
                 </div>
               );
@@ -661,71 +693,95 @@ export default function Home() {
         {/* Main Content Workspace Split Panel */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Panel: Problem Statement & Physics context */}
-          <section className="w-[45%] flex-shrink-0 border-r border-zinc-800 bg-[#0b0b0c] flex flex-col overflow-y-auto">
-            <div className="p-8 border-b border-zinc-800 flex items-center justify-between">
+          <section className="w-[45%] flex-shrink-0 border-r border-border-default bg-bg-secondary/20 flex flex-col overflow-y-auto animate-fadeIn">
+            <div className="px-6 py-4 border-b border-border-default flex items-center justify-between flex-shrink-0">
               <div>
-                <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Concept Module</span>
-                <h1 className="text-sm font-bold tracking-tight text-white mt-1 uppercase max-w-xs truncate">
+                <span className="text-[10px] uppercase tracking-widest text-text-muted font-extrabold">Concept Module</span>
+                <h1 className="text-sm font-extrabold tracking-tight text-text-primary mt-0.5 uppercase max-w-xs truncate">
                   {currentConcept.name}
                 </h1>
               </div>
-              <span className="text-[10px] bg-zinc-800/80 px-2.5 py-1 rounded text-zinc-350 border border-zinc-700/50 uppercase font-semibold">
+              <span className="text-[10px] bg-bg-card px-2.5 py-1 rounded text-text-secondary border border-border-default shadow-sm uppercase font-extrabold">
                 Problem Set
               </span>
             </div>
 
-            <div className="p-8 flex-1 space-y-6">
+            <div className="p-6 flex-1 space-y-5">
               {/* CARD 1: Diagnostic PYQ */}
               <div className={`rounded-xl border p-6 space-y-4 transition ${
                 activeStage === 'seed'
-                  ? 'bg-zinc-900/10 border-violet-850/50 shadow-[0_0_12px_rgba(139,92,246,0.05)]'
-                  : 'bg-zinc-950/20 border-zinc-850 opacity-60'
+                  ? 'bg-bg-card border-accent-dark/30 shadow-[0_4px_12px_rgba(0,143,140,0.03)]'
+                  : 'bg-bg-card/60 border-border-default opacity-70'
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400 bg-violet-950/30 border border-violet-900/50 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent-dark bg-accent-soft border border-accent-border px-2 py-0.5 rounded animate-transition">
                       Diagnostic PYQ
                     </span>
                     {currentProblem.pyqMetadata && (
-                      <span className="text-[9px] text-zinc-500 font-mono">
+                      <span className="text-[9px] text-text-muted font-mono">
                         {currentProblem.pyqMetadata.exam} ({currentProblem.pyqMetadata.year})
                       </span>
                     )}
                   </div>
                   <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${
-                    activeStage === 'seed' ? 'text-violet-400' : 'text-zinc-500'
+                    activeStage === 'seed' ? 'text-accent-dark animate-pulse' : 'text-text-muted'
                   }`}>
                     {activeStage === 'seed' ? '● ACTIVE' : '✓ SOLVED'}
                   </span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase font-bold text-zinc-500">Problem Statement</span>
-                    <span className="text-[10px] bg-zinc-850 px-2 py-0.5 rounded text-zinc-400 font-mono capitalize">
+                    <span className="text-[10px] uppercase font-bold text-text-muted">Problem Statement</span>
+                    <span className="text-[10px] bg-bg-secondary px-2 py-0.5 rounded text-text-secondary font-mono capitalize">
                       {currentProblem.difficulty}
                     </span>
                   </div>
-                  <p className="text-[14px] leading-relaxed text-zinc-200">
+                  <p className="text-[14px] leading-relaxed text-text-primary mb-3">
                     {currentProblem.question}
                   </p>
+
+                  {activeStage === 'seed' && !apiResult && (
+                    <div className="flex items-center space-x-2 bg-bg-secondary/45 p-2 rounded-lg border border-border-default/50">
+                      <span className="text-[10px] text-text-secondary font-medium">Presets:</span>
+                      <div className="flex-1 flex justify-end space-x-1">
+                        {conceptProblems.map((prob, idx) => (
+                          <button
+                            key={prob.problemId}
+                            onClick={() => {
+                              setSelectedProblemIndex(idx);
+                              resetWorkspace();
+                            }}
+                            className={`text-[10px] px-2.5 py-0.5 rounded transition cursor-pointer ${
+                              selectedProblemIndex === idx
+                                ? 'bg-accent-dark text-white shadow-sm font-bold'
+                                : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+                            }`}
+                          >
+                            {prob.difficulty.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* CARD 2: ConceptTwin Challenge */}
-              <div className={`rounded-xl border p-6 space-y-4 relative overflow-hidden transition ${
+              <div className={`rounded-xl border p-6 space-y-4 relative overflow-hidden min-h-[150px] transition ${
                 activeStage === 'twin'
-                  ? 'bg-zinc-900/10 border-amber-850/50 shadow-[0_0_12px_rgba(245,158,11,0.05)]'
+                  ? 'bg-bg-card border-warning-border/50 shadow-[0_4px_12px_rgba(245,158,11,0.03)]'
                   : apiResult?.nextAction === 'show_twin'
-                    ? 'border-amber-850/30 bg-[#0c0c0e]/30'
-                    : 'border-zinc-850 bg-zinc-950/20 opacity-55'
+                    ? 'border-warning-border/30 bg-warning-bg/40'
+                    : 'border-border-default bg-bg-card/50 opacity-60'
               }`}>
                 {/* Lock Overlay if locked */}
                 {activeStage === 'seed' && apiResult?.nextAction !== 'show_twin' && (
-                  <div className="absolute inset-0 bg-[#0c0c0e]/90 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center space-y-3 z-10">
+                  <div className="absolute inset-0 bg-bg-card/95 backdrop-blur-[1px] flex flex-col items-center justify-center p-6 text-center space-y-3 z-10">
                     <span className="text-2xl animate-bounce">🔒</span>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">ConceptTwin Locked</span>
-                      <p className="text-[11px] leading-relaxed text-zinc-500 max-w-xs mx-auto">
+                      <span className="text-[10px] font-bold text-text-primary uppercase tracking-widest">ConceptTwin Locked</span>
+                      <p className="text-[11px] leading-relaxed text-text-secondary max-w-xs mx-auto">
                         Unlocks dynamically if the AI evaluator detects a surface pattern-matching approach on the PYQ solution.
                       </p>
                     </div>
@@ -733,11 +789,15 @@ export default function Home() {
                 )}
 
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 bg-amber-950/30 border border-amber-900/50 px-2 py-0.5 rounded">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
+                    activeStage === 'twin'
+                      ? 'text-warning-text bg-warning-bg border border-warning-border/40'
+                      : 'text-text-disabled bg-bg-secondary border border-border-default/40'
+                  }`}>
                     ConceptTwin Challenge
                   </span>
                   <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${
-                    activeStage === 'twin' ? 'text-amber-400' : 'text-zinc-500'
+                    activeStage === 'twin' ? 'text-warning-text animate-pulse' : 'text-text-disabled'
                   }`}>
                     {activeStage === 'twin' ? '● ACTIVE' : apiResult?.nextAction === 'twin_accepted' ? '✓ VERIFIED' : 'PENDING'}
                   </span>
@@ -747,41 +807,40 @@ export default function Home() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold text-zinc-500">Deep Transfer Task</span>
-                        <span className="text-[10px] bg-zinc-850 px-2 py-0.5 rounded text-zinc-400 font-mono capitalize">
+                        <span className="text-[10px] uppercase font-bold text-text-muted">Deep Transfer Task</span>
+                        <span className="text-[10px] bg-bg-secondary px-2 py-0.5 rounded text-text-secondary font-mono capitalize">
                           {activeTwin.difficulty}
                         </span>
                       </div>
-                      <p className="text-[14px] leading-relaxed text-zinc-200">
+                      <p className="text-[14px] leading-relaxed text-text-primary">
                         {activeTwin.question}
                       </p>
                     </div>
 
-                    <div className="bg-amber-950/10 border border-amber-900/30 rounded-lg p-4 space-y-2">
-                      <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">AI Twin Rationale</span>
-                      <p className="text-[11px] leading-relaxed text-amber-200/80">
+                    <div className="bg-warning-bg/60 border border-warning-border/30 rounded-lg p-4 space-y-2">
+                      <span className="text-[10px] font-bold text-warning-text uppercase tracking-wider">AI Twin Rationale</span>
+                      <p className="text-[11px] leading-relaxed text-text-secondary">
                         {activeTwin.twinRationale}
                       </p>
                     </div>
                   </div>
                 )}
               </div>
-
               {/* Collapsed Equations Accordion */}
-              <div className="border border-zinc-800/80 rounded-lg overflow-hidden">
+              <div className="border border-border-default rounded-lg overflow-hidden">
                 <details className="group">
-                  <summary className="p-4 bg-zinc-900/40 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase flex items-center justify-between cursor-pointer hover:bg-zinc-900/60 select-none">
+                  <summary className="p-4 bg-bg-secondary text-[10px] font-semibold tracking-wider text-text-secondary uppercase flex items-center justify-between cursor-pointer hover:bg-bg-secondary/70 select-none">
                     <span>Reference Governing Equations</span>
                     <span className="transition-transform group-open:rotate-180">▼</span>
                   </summary>
-                  <div className="p-5 bg-zinc-950/20 border-t border-zinc-800/80 space-y-4 font-mono text-xs">
+                  <div className="p-5 bg-bg-card border-t border-border-default space-y-4 font-mono text-xs">
                     {currentConcept.coreEquations.map((eq) => (
-                      <div key={eq.id} className="p-3 bg-zinc-900/30 rounded border border-zinc-850">
-                        <div className="flex justify-between items-center text-zinc-300 font-bold mb-1">
+                      <div key={eq.id} className="p-3 bg-bg-secondary/35 rounded border border-border-default">
+                        <div className="flex justify-between items-center text-text-primary font-bold mb-1">
                           <span>{eq.label}</span>
-                          <span className="text-violet-400 font-sans">{eq.latex}</span>
+                          <span className="text-accent-dark font-sans">{eq.latex}</span>
                         </div>
-                        <p className="text-zinc-500 font-sans">{eq.explanation}</p>
+                        <p className="text-text-muted font-sans">{eq.explanation}</p>
                       </div>
                     ))}
                   </div>
@@ -791,23 +850,23 @@ export default function Home() {
           </section>
 
           {/* Right Panel: Student Workspace */}
-          <section className="flex-1 bg-[#09090b] flex flex-col overflow-y-auto">
-            <div className="p-8 border-b border-zinc-800 flex items-center justify-between">
+          <section className="flex-1 bg-background flex flex-col overflow-y-auto">
+            <div className="px-6 py-4 border-b border-border-default flex items-center justify-between flex-shrink-0">
               <div>
-                <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold">STUDENT WORKSPACE</span>
-                <h2 className="text-lg font-bold tracking-tight text-white mt-1">Submit Derivation</h2>
+                <span className="text-[10px] uppercase tracking-widest text-text-muted font-extrabold">STUDENT WORKSPACE</span>
+                <h2 className="text-sm font-extrabold tracking-tight text-text-primary mt-0.5">Submit Solution</h2>
               </div>
 
               {/* Tab Selector for input modes */}
               {!apiResult && (
-                <div className="flex bg-zinc-900/80 p-1 rounded-lg border border-zinc-800">
+                <div className="flex bg-bg-secondary p-1 rounded-lg border border-border-default">
                   <button
                     type="button"
                     onClick={() => setSubmissionType('text')}
-                    className={`text-xs px-3.5 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                    className={`text-[10px] px-3 py-1.5 rounded-md font-bold uppercase transition-all cursor-pointer ${
                       submissionType === 'text'
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-accent-dark text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
                     Type Solution
@@ -815,10 +874,10 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setSubmissionType('image')}
-                    className={`text-xs px-3.5 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                    className={`text-[10px] px-3 py-1.5 rounded-md font-bold uppercase transition-all cursor-pointer ${
                       submissionType === 'image'
-                        ? 'bg-violet-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-zinc-200'
+                        ? 'bg-accent-dark text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
                     }`}
                   >
                     Upload Image
@@ -827,11 +886,11 @@ export default function Home() {
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 flex-1 flex flex-col space-y-6">
+            <form onSubmit={handleSubmit} className="p-6 flex-1 flex flex-col space-y-5">
               {submissionType === 'text' ? (
                 /* Working Textarea */
                 <div className="flex-1 flex flex-col space-y-2">
-                  <label className="text-xs font-semibold tracking-wider text-zinc-400 uppercase">
+                  <label className="text-xs font-semibold tracking-wider text-text-secondary uppercase">
                     Write your step-by-step working/reasoning:
                   </label>
                   <textarea
@@ -844,7 +903,7 @@ Normal Force (N) upwards, gravity (mg) downwards.
 Applying Newton's Second Law along the acceleration path:
 N - mg = m * a
 N = m(g + a) = 2 * (10 + 2) = 24 N."
-                    className="flex-1 min-h-[220px] bg-[#0c0c0e] border border-zinc-800 rounded-lg p-5 text-sm font-mono text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-violet-500/80 disabled:opacity-50 resize-none leading-relaxed"
+                    className="flex-1 min-h-[220px] bg-bg-card border border-border-default rounded-lg p-5 text-sm font-mono text-text-primary placeholder:text-text-disabled focus:outline-none focus:border-border-active focus:ring-2 focus:ring-accent-brand/20 disabled:opacity-50 resize-none leading-relaxed shadow-inner"
                   />
                 </div>
               ) : (
@@ -858,8 +917,8 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                       onDrop={handleDrop}
                       className={`flex-1 min-h-[220px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-8 transition-all ${
                         isDragging
-                          ? 'border-violet-500 bg-violet-950/10'
-                          : 'border-zinc-800 bg-[#0c0c0e] hover:border-zinc-700'
+                          ? 'border-accent-dark bg-accent-soft/40'
+                          : 'border-border-default bg-bg-card hover:border-border-hover'
                       }`}
                     >
                       <input
@@ -874,27 +933,27 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                         className="cursor-pointer flex flex-col items-center space-y-3"
                       >
                         <span className="text-3xl">📷</span>
-                        <span className="text-sm font-semibold text-zinc-300 text-center">
-                          Drag & drop your handwritten solution, or <span className="text-violet-400 underline">browse</span>
+                        <span className="text-sm font-semibold text-text-secondary text-center">
+                          Drag & drop your handwritten solution, or <span className="text-accent-dark underline">browse</span>
                         </span>
-                        <span className="text-xs text-zinc-500">Supports PNG, JPG, JPEG (Max 5MB)</span>
+                        <span className="text-xs text-text-muted">Supports PNG, JPG, JPEG (Max 5MB)</span>
                       </label>
                     </div>
                   ) : (
                     /* Image Selection Metadata + Preview Control */
                     <div className="space-y-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-zinc-900/40 rounded-lg border border-zinc-850 gap-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-bg-secondary/40 rounded-lg border border-border-default gap-4 shadow-sm">
                         <div className="flex items-center space-x-4">
                           {imageBase64 && (
                             <img
                               src={imageBase64}
                               alt="Handwritten solution preview"
-                              className="w-16 h-16 object-contain rounded border border-zinc-800 bg-zinc-950"
+                              className="w-16 h-16 object-contain rounded border border-border-default bg-bg-card"
                             />
                           )}
                           <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-zinc-200 truncate max-w-xs">{imageFile.name}</span>
-                            <span className="text-xs text-zinc-500">{(imageFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                            <span className="text-sm font-semibold text-text-primary truncate max-w-xs">{imageFile.name}</span>
+                            <span className="text-xs text-text-muted">{(imageFile.size / 1024 / 1024).toFixed(2)} MB</span>
                           </div>
                         </div>
                         {!apiResult && (
@@ -908,7 +967,7 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                               setWorking('');
                               setFinalAnswer('');
                             }}
-                            className="text-xs text-rose-400 hover:text-rose-300 font-semibold border border-rose-900/30 bg-rose-950/20 px-3.5 py-1.5 rounded transition cursor-pointer"
+                            className="text-xs text-rose-600 hover:text-rose-700 font-semibold border border-rose-200 bg-rose-50 hover:bg-rose-100/50 px-3.5 py-1.5 rounded transition cursor-pointer"
                           >
                             Remove Image
                           </button>
@@ -920,7 +979,7 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                         <button
                           type="button"
                           onClick={runImageAnalysis}
-                          className="w-full bg-violet-650 hover:bg-violet-600 border border-violet-700/50 text-white font-bold py-3 px-4 rounded-lg text-xs transition cursor-pointer flex items-center justify-center space-x-2"
+                          className="w-full bg-accent-dark hover:bg-accent-dark/95 border border-accent-border text-white font-bold py-3 px-4 rounded-lg text-xs transition cursor-pointer flex items-center justify-center space-x-2 shadow-sm"
                         >
                           <span>✨</span>
                           <span>EXTRACT SOLUTION WITH GEMINI VISION</span>
@@ -928,20 +987,20 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                       )}
 
                       {isAnalyzingImage && (
-                        <div className="p-8 bg-zinc-900/20 border border-zinc-850 rounded-lg flex flex-col items-center justify-center space-y-3">
-                          <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                          <span className="text-xs font-mono text-zinc-400 animate-pulse">Gemini Vision is transcribing steps...</span>
+                        <div className="p-8 bg-bg-secondary/40 border border-border-default rounded-lg flex flex-col items-center justify-center space-y-3">
+                          <div className="w-6 h-6 border-2 border-accent-dark border-t-transparent rounded-full animate-spin" />
+                          <span className="text-xs font-mono text-text-secondary animate-pulse">Gemini Vision is transcribing steps...</span>
                         </div>
                       )}
 
                       {extractionError && (
-                        <div className="p-4 bg-red-950/20 border border-red-900/40 text-red-400 rounded-lg text-xs space-y-2.5">
-                          <p className="font-semibold text-red-300">Extraction Error:</p>
+                        <div className="p-4 bg-error-bg border border-error-border text-error-text rounded-lg text-xs space-y-2.5">
+                          <p className="font-semibold text-error-text">Extraction Error:</p>
                           <p>{extractionError}</p>
                           <button
                             type="button"
                             onClick={runImageAnalysis}
-                            className="bg-red-900/40 hover:bg-red-800/40 border border-red-800/60 px-3 py-1 rounded font-bold cursor-pointer"
+                            className="bg-error-bg hover:bg-error-border/40 border border-error-border px-3 py-1 rounded font-bold cursor-pointer text-error-text"
                           >
                             Retry Extraction
                           </button>
@@ -951,18 +1010,18 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                       {extractionResult && (
                         <div className="space-y-4">
                           {extractionResult.isImageUnclear ? (
-                            <div className="p-5 bg-amber-950/20 border border-amber-900/40 rounded-lg space-y-2">
-                              <div className="flex items-center space-x-2 text-amber-400 font-bold text-xs uppercase">
+                            <div className="p-5 bg-warning-bg border border-warning-border text-warning-text rounded-lg space-y-2">
+                              <div className="flex items-center space-x-2 text-warning-text font-bold text-xs uppercase">
                                 <span>⚠️</span>
                                 <span>Image Unclear or Not Readable</span>
                               </div>
-                              <p className="text-xs text-zinc-300 leading-relaxed">
+                              <p className="text-xs text-warning-text/90 leading-relaxed">
                                 Gemini Vision could not identify a valid, readable handwritten solution. Please verify image lighting and crop.
                               </p>
                               {extractionResult.unclearRegions.length > 0 && (
                                 <div className="space-y-1.5 pt-1">
-                                  <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Identified issues:</span>
-                                  <ul className="list-disc pl-4 space-y-1 text-xs text-zinc-400">
+                                  <span className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider">Identified issues:</span>
+                                  <ul className="list-disc pl-4 space-y-1 text-xs text-text-secondary">
                                     {extractionResult.unclearRegions.map((region: string, idx: number) => (
                                       <li key={idx}>{region}</li>
                                     ))}
@@ -972,26 +1031,26 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                             </div>
                           ) : (
                             <div className="space-y-4">
-                              <div className="p-4 bg-emerald-950/10 border border-emerald-900/30 rounded-lg space-y-3">
-                                <div className="flex items-center justify-between text-xs font-bold text-emerald-400 uppercase">
+                              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg space-y-3">
+                                <div className="flex items-center justify-between text-xs font-bold text-emerald-800 uppercase">
                                   <span>✨ Transcribed Solution Details</span>
-                                  <span className="font-mono bg-emerald-900/30 px-2 py-0.5 rounded border border-emerald-800/40">
+                                  <span className="font-mono bg-emerald-100 border border-emerald-250 text-emerald-850 px-2 py-0.5 rounded text-[10px]">
                                     {(extractionResult.confidence * 100).toFixed(0)}% Confidence
                                   </span>
                                 </div>
-                                <div className="text-xs text-zinc-300 font-mono space-y-1.5">
-                                  <p className="font-semibold text-zinc-400">Transcribed Working:</p>
-                                  <pre className="p-3 bg-zinc-950/60 border border-zinc-850 rounded whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">
+                                <div className="text-xs text-text-secondary font-mono space-y-1.5">
+                                  <p className="font-semibold text-text-secondary">Transcribed Working:</p>
+                                  <pre className="p-3 bg-bg-card border border-border-default rounded whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto text-text-primary">
                                     {extractionResult.extractedWorking}
                                   </pre>
                                 </div>
 
                                 {extractionResult.detectedEquations.length > 0 && (
                                   <div className="text-xs space-y-1">
-                                    <span className="font-semibold text-zinc-400">Detected Equations:</span>
+                                    <span className="font-semibold text-text-secondary">Detected Equations:</span>
                                     <div className="flex flex-wrap gap-1 mt-1">
                                       {extractionResult.detectedEquations.map((eq: string, idx: number) => (
-                                        <span key={idx} className="bg-zinc-850 px-2 py-0.5 rounded text-zinc-300 font-mono text-[10px] border border-zinc-700/60">
+                                        <span key={idx} className="bg-bg-secondary px-2 py-0.5 rounded text-text-primary font-mono text-[10px] border border-border-default">
                                           {eq}
                                         </span>
                                       ))}
@@ -1002,8 +1061,8 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
 
                               {/* Student Verification Message */}
                               {!apiResult && (
-                                <div className="bg-zinc-900/30 border border-zinc-850 p-4 rounded-lg text-xs text-zinc-400 leading-relaxed">
-                                  <p className="font-semibold text-zinc-300 mb-1">Verify & Refine:</p>
+                                <div className="bg-bg-secondary/40 border border-border-default p-4 rounded-lg text-xs text-text-secondary leading-relaxed">
+                                  <p className="font-semibold text-text-primary mb-1">Verify & Refine:</p>
                                   <p>
                                     Verify the transcription and the pre-filled answer below. If Gemini Vision misread a value or variable, you can edit the working or final answer box directly before confirming.
                                   </p>
@@ -1021,7 +1080,7 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
               {/* Answer Input and Submit Button side-by-side */}
               <div className="grid grid-cols-3 gap-4 items-end">
                 <div className="col-span-1 space-y-2">
-                  <label className="text-xs font-semibold tracking-wider text-zinc-400 uppercase">
+                  <label className="text-xs font-semibold tracking-wider text-text-secondary uppercase">
                     Final Answer ({activeStage === 'seed' ? currentProblem.unit : activeTwin?.unit}):
                   </label>
                   <input
@@ -1030,7 +1089,7 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                     value={finalAnswer}
                     onChange={(e) => setFinalAnswer(e.target.value)}
                     placeholder="Value"
-                    className="w-full bg-[#0c0c0e] border border-zinc-800 rounded-lg p-3 text-sm font-mono text-center text-zinc-200 focus:outline-none focus:border-violet-500/80 disabled:opacity-50"
+                    className="w-full bg-bg-card border border-border-default rounded-lg p-3 text-sm font-mono text-center text-text-primary focus:outline-none focus:border-border-active focus:ring-2 focus:ring-accent-brand/20 disabled:opacity-50 shadow-inner animate-transition"
                   />
                 </div>
 
@@ -1039,7 +1098,7 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                     <button
                       disabled={isSubmitting}
                       type="submit"
-                      className="w-full bg-violet-650 hover:bg-violet-600 text-white font-bold py-3 px-6 rounded-lg text-sm transition focus:outline-none disabled:opacity-50 flex items-center justify-center space-x-2 cursor-pointer shadow-md"
+                      className="w-full bg-accent-dark hover:bg-accent-dark/95 text-white font-bold py-3 px-6 rounded-lg text-sm transition focus:outline-none disabled:opacity-50 flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
                     >
                       {isSubmitting ? (
                         <span>Evaluating...</span>
@@ -1051,7 +1110,7 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                     <button
                       type="button"
                       onClick={resetWorkspace}
-                      className="w-full bg-zinc-805 hover:bg-zinc-700 text-zinc-300 font-bold py-3 px-6 rounded-lg text-sm transition focus:outline-none cursor-pointer border border-zinc-700/30"
+                      className="w-full bg-bg-secondary hover:bg-border-default text-text-primary font-bold py-3 px-6 rounded-lg text-sm transition focus:outline-none cursor-pointer border border-border-default shadow-sm"
                     >
                       RESET WORKSPACE
                     </button>
@@ -1060,7 +1119,7 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
               </div>
 
               {error && (
-                <div className="bg-red-950/20 border border-red-900/40 text-red-400 p-4 rounded-lg text-xs leading-relaxed">
+                <div className="bg-error-bg border border-error-border text-error-text p-4 rounded-lg text-xs leading-relaxed">
                   {error}
                 </div>
               )}
@@ -1070,28 +1129,77 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
 
         {/* Ambient Loader Overlay */}
         {isSubmitting && (
-          <div className="absolute inset-0 bg-[#09090b]/85 backdrop-blur-sm flex flex-col items-center justify-center space-y-6 z-40">
-            <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
-            <div className="flex flex-col items-center space-y-1">
-              <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold">ANALYZING ATTEMPT</span>
-              <p className="text-sm font-mono text-zinc-300 animate-pulse">{LOADER_TEXTS[loaderStep]}</p>
+          <div className="absolute inset-0 bg-bg-secondary/95 backdrop-blur-md flex flex-col items-center justify-center p-8 z-40 select-none animate-fadeIn">
+            {/* 3D Depth Orbit Visual */}
+            <div className="relative w-36 h-36 flex items-center justify-center">
+              {/* Outer rotating orbit 1 */}
+              <div className="absolute inset-0 border border-dashed border-accent-dark/30 rounded-full animate-[spin_8s_linear_infinite]" />
+              {/* Outer rotating orbit 2 */}
+              <div className="absolute w-28 h-28 border border-accent-dark/20 rounded-full animate-[spin_5s_linear_infinite_reverse]" />
+              {/* Orbiting particle point */}
+              <div className="absolute w-2 h-2 bg-accent-dark rounded-full animate-[spin_3s_linear_infinite] origin-[68px_68px] shadow-[0_0_8px_rgba(0,143,140,0.8)]" />
+              
+              {/* Floating Core */}
+              <div className="relative w-14 h-14 bg-bg-card rounded-2xl border border-accent-border/40 shadow-xl flex items-center justify-center animate-[floatSlow_3s_ease-in-out_infinite]">
+                <div className="w-3.5 h-3.5 rounded-full bg-accent-dark animate-[pulseGlow_2s_ease-in-out_infinite]" />
+              </div>
+            </div>
+
+            <div className="text-center mt-4 mb-2">
+              <span className="text-[10px] tracking-widest uppercase font-extrabold text-accent-dark">Tutor Assessment</span>
+              <h4 className="text-sm font-extrabold text-text-primary mt-1 tracking-tight">ConceptTwin is assessing your solution method</h4>
+            </div>
+
+            {/* Stages checklist */}
+            <div className="flex flex-col items-start space-y-2 mt-4 w-full max-w-[280px]">
+              {TUTOR_ANALYSIS_STAGES.map((stage, idx) => {
+                const isCompleted = idx < tutorStep;
+                const isActive = idx === tutorStep;
+                return (
+                  <div
+                    key={stage}
+                    className={`flex items-center space-x-2.5 transition-all duration-300 ${
+                      isActive ? 'opacity-100 scale-[1.02]' : isCompleted ? 'opacity-40' : 'opacity-15'
+                    }`}
+                  >
+                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-extrabold border ${
+                      isCompleted
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-600'
+                        : isActive
+                          ? 'bg-accent-soft border-accent-dark text-accent-dark animate-pulse shadow-sm'
+                          : 'bg-transparent border-border-default text-text-disabled'
+                    }`}>
+                      {isCompleted ? '✓' : ''}
+                    </div>
+                    <span className={`text-[11px] tracking-wide ${
+                      isActive
+                        ? 'text-text-primary font-bold'
+                        : isCompleted
+                          ? 'text-text-secondary font-medium'
+                          : 'text-text-disabled'
+                    }`}>
+                      {stage}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* Feedback Overlay Panel (Slides up when evaluation is ready) */}
         {apiResult && (
-          <div className="border-t border-zinc-800 bg-[#0c0c0e] p-8 max-h-[50%] overflow-y-auto space-y-6 z-30">
+          <div className="border-t border-border-default bg-bg-secondary p-8 max-h-[50%] overflow-y-auto space-y-6 z-30 shadow-2xl relative">
             {/* Top evaluation summary strip */}
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Evaluation Outcome</span>
-                <h3 className="text-xl font-bold tracking-tight text-white flex items-center space-x-2">
+                <span className="text-xs uppercase tracking-widest text-text-muted font-bold">Evaluation Outcome</span>
+                <h3 className="text-xl font-bold tracking-tight text-text-primary flex items-center space-x-2">
                   <span>Score: {apiResult.evaluation?.score}%</span>
-                  <span className="text-zinc-600">•</span>
+                  <span className="text-border-hover">•</span>
                   <span
                     className={
-                      apiResult.evaluation?.isCorrect ? 'text-emerald-400' : 'text-rose-400'
+                      apiResult.evaluation?.isCorrect ? 'text-emerald-600' : 'text-rose-600'
                     }
                   >
                     {apiResult.evaluation?.isCorrect ? 'Correct Numerical Answer' : 'Incorrect Answer'}
@@ -1103,12 +1211,12 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                 {/* Stage A (Seed) Success or Fail Transitions */}
                 {apiResult.nextAction === 'mastered' && (
                   <div className="flex items-center space-x-4">
-                    <span className="text-xs text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 px-3 py-1 rounded">
+                    <span className="text-xs text-emerald-800 font-semibold bg-emerald-100 border border-emerald-250 px-3 py-1 rounded">
                       Concept Mastered!
                     </span>
                     <button
                       onClick={proceedToNextConcept}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer shadow-sm"
                     >
                       PROCEED TO NEXT CONCEPT
                     </button>
@@ -1117,12 +1225,12 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
 
                 {apiResult.nextAction === 'show_twin' && activeStage === 'seed' && (
                   <div className="flex items-center space-x-4">
-                    <span className="text-xs text-amber-400 font-semibold bg-amber-950/20 border border-amber-900/30 px-3 py-1 rounded">
+                    <span className="text-xs text-amber-800 font-semibold bg-amber-100 border border-amber-250 px-3 py-1 rounded">
                       Rote/Surface Match Detected
                     </span>
                     <button
                       onClick={acceptTwinChallenge}
-                      className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer"
+                      className="bg-accent-dark hover:bg-accent-dark/90 border border-accent-border text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer shadow-sm"
                     >
                       ACCEPT TWIN CHALLENGE
                     </button>
@@ -1132,12 +1240,12 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
                 {/* Stage B (Twin) Success / Fail Transitions */}
                 {apiResult.nextAction === 'twin_accepted' && (
                   <div className="flex items-center space-x-4">
-                    <span className="text-xs text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 px-3 py-1 rounded">
+                    <span className="text-xs text-emerald-800 font-semibold bg-emerald-100 border border-emerald-250 px-3 py-1 rounded">
                       Transfer Confirmed! Concept Mastered.
                     </span>
                     <button
                       onClick={proceedToNextConcept}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer shadow-sm"
                     >
                       PROCEED TO NEXT CONCEPT
                     </button>
@@ -1146,12 +1254,12 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
 
                 {apiResult.nextAction === 'remediation' && (
                   <div className="flex items-center space-x-4">
-                    <span className="text-xs text-red-400 font-semibold bg-red-950/20 border border-red-900/30 px-3 py-1 rounded">
+                    <span className="text-xs text-rose-800 font-semibold bg-rose-100 border border-rose-250 px-3 py-1 rounded">
                       Needs Remediation
                     </span>
                     <button
                       onClick={resetWorkspace}
-                      className="bg-red-650 hover:bg-red-650 text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer"
+                      className="bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 px-5 rounded text-xs transition cursor-pointer shadow-sm"
                     >
                       TRY AGAIN
                     </button>
@@ -1162,38 +1270,38 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
 
             {/* Vision Image and Extraction summary row */}
             {submissionType === 'image' && imageBase64 && extractionResult && (
-              <div className="bg-[#121215] border border-zinc-800/80 p-5 rounded-lg space-y-4">
-                <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
+              <div className="bg-bg-card border border-border-default p-5 rounded-lg space-y-4 shadow-sm">
+                <span className="text-xs font-bold tracking-wider text-text-muted uppercase">
                   Submitted Image & Extraction Analysis
                 </span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="col-span-1 border border-zinc-850 rounded-lg p-3 bg-zinc-950/50 flex flex-col items-center justify-center">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold mb-2">Original Solution Image</span>
+                  <div className="col-span-1 border border-border-default rounded-lg p-3 bg-bg-secondary/30 flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-text-muted uppercase font-bold mb-2">Original Solution Image</span>
                     <img
                       src={imageBase64}
                       alt="Handwritten physics solution"
-                      className="max-h-32 object-contain rounded border border-zinc-800"
+                      className="max-h-32 object-contain rounded border border-border-default bg-bg-card shadow-sm"
                     />
                   </div>
                   <div className="col-span-2 space-y-3 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-zinc-400">Extracted Step-by-Step Working:</span>
-                      <span className="text-[10px] bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 font-mono px-2 py-0.5 rounded">
+                      <span className="font-semibold text-text-secondary">Extracted Step-by-Step Working:</span>
+                      <span className="text-xs text-emerald-800 font-semibold bg-emerald-100 border border-emerald-250 px-2 py-0.5 rounded">
                         {(extractionResult.confidence * 100).toFixed(0)}% Confidence
                       </span>
                     </div>
-                    <pre className="p-3 bg-zinc-950/50 border border-zinc-850 rounded whitespace-pre-wrap font-mono text-zinc-300 max-h-24 overflow-y-auto leading-relaxed">
+                    <pre className="p-3 bg-bg-secondary/40 border border-border-default rounded whitespace-pre-wrap font-mono text-text-primary max-h-24 overflow-y-auto leading-relaxed">
                       {extractionResult.extractedWorking}
                     </pre>
                     <div className="flex space-x-6 pt-1">
                       <div>
-                        <span className="font-semibold text-zinc-400">Answer Extracted: </span>
-                        <span className="text-zinc-200 font-mono">{extractionResult.extractedFinalAnswer}</span>
+                        <span className="font-semibold text-text-secondary">Answer Extracted: </span>
+                        <span className="text-text-primary font-mono font-bold">{extractionResult.extractedFinalAnswer}</span>
                       </div>
                       {extractionResult.detectedEquations.length > 0 && (
                         <div>
-                          <span className="font-semibold text-zinc-400">Formulas Found: </span>
-                          <span className="text-zinc-300 font-mono">{extractionResult.detectedEquations.join(', ')}</span>
+                          <span className="font-semibold text-text-secondary">Formulas Found: </span>
+                          <span className="text-accent-dark font-mono font-bold">{extractionResult.detectedEquations.join(', ')}</span>
                         </div>
                       )}
                     </div>
@@ -1205,13 +1313,13 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
             {/* Dissected mistakes list */}
             <div className="grid grid-cols-2 gap-6">
               {/* Left pane: evaluator mistakes / feedback */}
-              <div className="bg-[#121215] border border-zinc-800 p-5 rounded-lg space-y-4">
-                <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">Evaluator Dissection</span>
-                <p className="text-sm text-zinc-300 italic">&ldquo;{apiResult.evaluation?.summary}&rdquo;</p>
+              <div className="bg-bg-card border border-border-default p-5 rounded-lg space-y-4 shadow-sm">
+                <span className="text-xs font-bold tracking-wider text-text-muted uppercase">Evaluator Dissection</span>
+                <p className="text-sm text-text-primary italic leading-relaxed">&ldquo;{apiResult.evaluation?.summary}&rdquo;</p>
                 {apiResult.evaluation?.identifiedMistakes && apiResult.evaluation.identifiedMistakes.length > 0 && (
                   <div className="space-y-2 mt-2">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Identified Mistakes:</span>
-                    <ul className="list-disc pl-4 space-y-1 text-xs text-zinc-400">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Identified Mistakes:</span>
+                    <ul className="list-disc pl-4 space-y-1 text-xs text-text-secondary">
                       {apiResult.evaluation.identifiedMistakes.map((mistake, idx) => (
                         <li key={idx}>{mistake}</li>
                       ))}
@@ -1222,41 +1330,41 @@ N = m(g + a) = 2 * (10 + 2) = 24 N."
 
               {/* Right pane: diagnosis / verifier feedback */}
               {activeStage === 'seed' && apiResult.diagnosis && (
-                <div className="bg-amber-950/10 border border-amber-900/30 p-5 rounded-lg space-y-4">
+                <div className="bg-warning-bg border border-warning-border p-5 rounded-lg space-y-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-wider text-amber-500 uppercase">Diagnosis Report</span>
-                    <span className="text-[10px] bg-amber-900/30 border border-amber-800/40 text-amber-300 font-mono px-2 py-0.5 rounded">
+                    <span className="text-xs font-bold tracking-wider text-warning-text uppercase">Diagnosis Report</span>
+                    <span className="text-[10px] bg-warning-bg border border-warning-border text-warning-text font-mono px-2 py-0.5 rounded">
                       {(apiResult.diagnosis.confidence * 100).toFixed(0)}% Confidence
                     </span>
                   </div>
                   <div className="space-y-2 text-xs">
                     <div>
-                      <span className="font-bold text-amber-400">Misconception: </span>
-                      <span className="text-zinc-300">{apiResult.diagnosis.misconceptionType}</span>
+                      <span className="font-bold text-warning-text">Misconception: </span>
+                      <span className="text-text-primary">{apiResult.diagnosis.misconceptionType}</span>
                     </div>
                     <div>
-                      <span className="font-bold text-amber-400">Conceptual Gap: </span>
-                      <p className="text-zinc-400 mt-0.5">{apiResult.diagnosis.conceptualGap}</p>
+                      <span className="font-bold text-warning-text">Conceptual Gap: </span>
+                      <p className="text-text-secondary mt-0.5">{apiResult.diagnosis.conceptualGap}</p>
                     </div>
                     <div>
-                      <span className="font-bold text-amber-400">Deep Principle Failure: </span>
-                      <p className="text-zinc-400 mt-0.5">{apiResult.diagnosis.deepStructureFailure}</p>
+                      <span className="font-bold text-warning-text">Deep Principle Failure: </span>
+                      <p className="text-text-secondary mt-0.5">{apiResult.diagnosis.deepStructureFailure}</p>
                     </div>
                   </div>
                 </div>
               )}
 
               {activeStage === 'twin' && apiResult.verification && (
-                <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-lg space-y-4">
-                  <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase">Verifier Report</span>
+                <div className="bg-bg-card border border-border-default p-5 rounded-lg space-y-4 shadow-sm">
+                  <span className="text-xs font-bold tracking-wider text-text-muted uppercase">Verifier Report</span>
                   <div className="space-y-2 text-xs">
                     <div>
-                      <span className="font-bold text-zinc-400">Transfer Score: </span>
-                      <span className="text-zinc-300 font-mono">{apiResult.verification.twinAttemptScore}%</span>
+                      <span className="font-bold text-text-secondary">Transfer Score: </span>
+                      <span className="text-accent-dark font-mono font-bold">{apiResult.verification.twinAttemptScore}%</span>
                     </div>
                     <div>
-                      <span className="font-bold text-zinc-400">Feedback: </span>
-                      <p className="text-zinc-400 mt-0.5">{apiResult.verification.transferFeedback}</p>
+                      <span className="font-bold text-text-secondary">Feedback: </span>
+                      <p className="text-text-secondary mt-0.5 leading-relaxed">{apiResult.verification.transferFeedback}</p>
                     </div>
                   </div>
                 </div>
