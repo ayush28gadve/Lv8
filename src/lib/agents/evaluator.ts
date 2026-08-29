@@ -16,42 +16,13 @@
  *   - masteryLevel       (updated based on evaluation)
  */
 
-import { generateJSON } from '@/lib/ai/gemini';
+import { callWithRetry } from '@/lib/ai/gemini';
 import {
   EvaluationResultSchema,
   type EvaluationResult,
 } from '@/lib/ai/schemas';
 import { buildEvaluatorPrompt } from '@/lib/ai/prompts';
 import type { GraphStateType } from '@/lib/orchestration/state';
-
-// ---------------------------------------------------------------------------
-// Safe JSON extraction with retry
-// ---------------------------------------------------------------------------
-
-/**
- * Attempt to call Gemini and parse structured JSON with up to `maxAttempts`.
- * On parse failure, retries with slightly higher temperature to break repetition.
- */
-async function callGeminiWithRetry<T>(
-  userPrompt: string,
-  systemPrompt: string,
-  maxAttempts = 3
-): Promise<T> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      return await generateJSON<T>(userPrompt, {
-        systemInstruction: systemPrompt,
-        temperature: 0.2 + attempt * 0.1,
-        maxOutputTokens: 1024,
-      });
-    } catch (err) {
-      lastError = err;
-      // Continue to retry
-    }
-  }
-  throw lastError;
-}
 
 // ---------------------------------------------------------------------------
 // Node implementation
@@ -90,10 +61,13 @@ export async function evaluatorNode(
       studentFinalAnswer: state.studentFinalAnswer,
     });
 
-    // ── Call Gemini ───────────────────────────────────────────────────────
-    const rawResult = await callGeminiWithRetry<EvaluationResult>(
+    // ── Call Gemini with retry ─────────────────────────────────────────────
+    // Evaluation is high-stakes so we allow up to 3 attempts before failing.
+    const rawResult = await callWithRetry<EvaluationResult>(
       user,
-      system
+      system,
+      3,
+      { temperature: 0.2, maxOutputTokens: 1024 }
     );
 
     // ── Validate via Zod ──────────────────────────────────────────────────
@@ -103,7 +77,7 @@ export async function evaluatorNode(
     // Three cases:
     //   1. Correct answer + correct reasoning → mastered
     //   2. Correct answer but flawed reasoning → surface pattern-matcher
-    //   3. Wrong answer → developing or needs remediation
+    //   3. Wrong answer → developing (will be diagnosed)
     const masteryLevel =
       evaluation.isCorrect && evaluation.hasCorrectReasoning
         ? 'mastered'
