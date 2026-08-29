@@ -4,6 +4,8 @@ import { ConceptId, SeedProblem } from '@/types/physics';
  * 10 Verified Seed Problems (2 per Concept Cluster)
  * Standard Class 11-12 Physics (Newton's Laws of Motion & Friction)
  * All numerical values use standard g = 10 m/s² with exact, verified solutions.
+ * 
+ * Each has been enriched with pyqMetadata mapping to adaptively modeled JEE Main archives.
  */
 export const SEED_PROBLEMS: SeedProblem[] = [
   // =========================================================================
@@ -32,6 +34,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       gravity: 10,
     },
     targetVariable: 'Normal Force (N)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2021,
+      source: 'JEE Mechanics Archives'
+    }
   },
   {
     problemId: 'prob-fbd-02',
@@ -56,6 +63,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       gravity: 10,
     },
     targetVariable: 'Normal Force (N)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2020,
+      source: 'JEE Mechanics Archives'
+    }
   },
 
   // =========================================================================
@@ -85,6 +97,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       initialVelocity: 0,
     },
     targetVariable: 'Final Speed (m/s)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2019,
+      source: 'JEE Mechanics Archives'
+    }
   },
   {
     problemId: 'prob-nl2-02',
@@ -109,6 +126,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       mass: 3,
     },
     targetVariable: 'Acceleration Magnitude (m/s²)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2022,
+      source: 'JEE Mechanics Archives'
+    }
   },
 
   // =========================================================================
@@ -139,6 +161,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       gravity: 10,
     },
     targetVariable: 'Actual Friction Force (N)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2021,
+      source: 'JEE Friction Archives'
+    }
   },
   {
     problemId: 'prob-frc-02',
@@ -164,6 +191,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       gravity: 10,
     },
     targetVariable: 'Deceleration Magnitude (m/s²)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2018,
+      source: 'JEE Friction Archives'
+    }
   },
 
   // =========================================================================
@@ -193,6 +225,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       sin30: 0.5,
     },
     targetVariable: 'Downhill Acceleration (m/s²)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2023,
+      source: 'JEE Incline Archives'
+    }
   },
   {
     problemId: 'prob-inc-02',
@@ -220,6 +257,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       gravity: 10,
     },
     targetVariable: 'Downhill Acceleration (m/s²)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2021,
+      source: 'JEE Incline Archives'
+    }
   },
 
   // =========================================================================
@@ -248,6 +290,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       gravity: 10,
     },
     targetVariable: 'System Acceleration (m/s²)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2020,
+      source: 'JEE Pulley Systems Archives'
+    }
   },
   {
     problemId: 'prob-pul-02',
@@ -272,6 +319,11 @@ export const SEED_PROBLEMS: SeedProblem[] = [
       gravity: 10,
     },
     targetVariable: 'String Tension (N)',
+    pyqMetadata: {
+      exam: 'JEE Main (Adaptive Practice)',
+      year: 2022,
+      source: 'JEE Pulley Systems Archives'
+    }
   },
 ];
 

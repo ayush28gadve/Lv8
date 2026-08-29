@@ -26,27 +26,28 @@ export const SeedAttemptPayloadSchema = z.object({
   stage: z.literal('seed'),
   /** problemId from the physics knowledge layer (e.g. "prob-fbd-01") */
   problemId: z.string().min(1),
-  /** Raw step-by-step working the student wrote out */
-  working: z.string().min(1, 'Working cannot be empty'),
-  /** Student's stated final answer (number or numeric string) */
-  finalAnswer: z.union([
-    z.number(),
-    z.string().min(1, 'Final answer cannot be empty'),
-  ]),
+  /** Raw step-by-step working the student wrote out (optional if image is provided) */
+  working: z.string().optional(),
+  /** Student's stated final answer (number or numeric string, optional) */
+  finalAnswer: z.union([z.number(), z.string()]).optional(),
+  /** Base64-encoded handwritten solution image (optional if working is provided) */
+  image: z.string().optional(),
   /**
    * Optional session ID for correlating logs across requests.
    * If omitted the server generates one.
    */
   sessionId: z.string().optional(),
+}).refine((data) => {
+  return (data.working && data.working.trim().length > 0) || (data.image && data.image.trim().length > 0);
+}, {
+  message: "Either typed working or handwritten solution image must be provided.",
+  path: ["working"]
 });
 
 export type SeedAttemptPayload = z.infer<typeof SeedAttemptPayloadSchema>;
 
 /**
  * Stage B — student is attempting the AI-generated twin problem.
- * The client must echo the twinId so the server can locate the twin's
- * ground-truth answer from the graph result stored server-side.
- * We do NOT trust the client to supply the correct answer.
  */
 export const TwinAttemptPayloadSchema = z.object({
   stage: z.literal('twin'),
@@ -54,13 +55,12 @@ export const TwinAttemptPayloadSchema = z.object({
   twinId: z.string().min(1),
   /** The original problemId — used to reload the concept context */
   problemId: z.string().min(1),
-  /** Student's working on the twin problem */
-  working: z.string().min(1, 'Working cannot be empty'),
-  /** Student's stated final answer for the twin */
-  finalAnswer: z.union([
-    z.number(),
-    z.string().min(1, 'Final answer cannot be empty'),
-  ]),
+  /** Student's working on the twin problem (optional if image is provided) */
+  working: z.string().optional(),
+  /** Student's stated final answer for the twin (optional) */
+  finalAnswer: z.union([z.number(), z.string()]).optional(),
+  /** Base64-encoded handwritten solution image (optional if working is provided) */
+  image: z.string().optional(),
   /** Session ID from stage-A response */
   sessionId: z.string().optional(),
   /**
@@ -78,6 +78,11 @@ export const TwinAttemptPayloadSchema = z.object({
     twinRationale: z.string(),
     difficulty: z.enum(['easy', 'medium', 'hard']),
   }),
+}).refine((data) => {
+  return (data.working && data.working.trim().length > 0) || (data.image && data.image.trim().length > 0);
+}, {
+  message: "Either typed working or handwritten solution image must be provided.",
+  path: ["working"]
 });
 
 export type TwinAttemptPayload = z.infer<typeof TwinAttemptPayloadSchema>;

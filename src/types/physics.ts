@@ -54,23 +54,51 @@ export interface TwinGenerationConstraints {
 }
 
 /**
+ * Hierarchical curriculum nodes
+ */
+export interface CurriculumNode {
+  classLevel: string; // e.g. "Class 11"
+  examId: string;     // e.g. "jee-main"
+  subjectId: string;  // e.g. "physics"
+  chapterId: string;  // e.g. "laws-of-motion"
+  topicId: string;    // e.g. "friction"
+}
+
+/**
  * Main representation of a Physics Concept in ConceptTwin
  */
 export interface PhysicsConcept {
   conceptId: ConceptId;
   name: string;
   description: string;
-  deepPrinciple: string;
-  prerequisites: string[];
+  deepPrinciple: string; // The "Underlying Physics Principle"
+  learningObjective: string; // Added: specific learning objective
+  prerequisites: string[]; // List of prerequisite concept IDs or description
   coreEquations: CoreEquation[];
   commonMisconceptions: string[];
   surfaceFeatures: string[];
   deepStructure: DeepStructure;
   twinGenerationConstraints: TwinGenerationConstraints;
+  
+  // Curriculum hierarchy mapping:
+  classLevel: string; // e.g. "Class 11"
+  examId: string;     // e.g. "jee-main"
+  subjectId: string;  // e.g. "physics"
+  chapterId: string;  // e.g. "laws-of-motion"
+  topicId: string;    // e.g. "friction"
 }
 
 /**
- * Verified seed problem representation
+ * Official PYQ / Seed Problem source metadata
+ */
+export interface PyqMetadata {
+  exam: string;       // e.g. "JEE Main"
+  year: number;       // e.g. 2021
+  source: string;     // e.g. "Official Paper" or "Adaptive Practice"
+}
+
+/**
+ * Verified seed problem / diagnostic PYQ representation
  */
 export interface SeedProblem {
   problemId: string;
@@ -84,4 +112,7 @@ export interface SeedProblem {
   commonMistakes: string[];
   givenData?: Record<string, number | string>;
   targetVariable?: string;
+  
+  // Optional PYQ specific metadata
+  pyqMetadata?: PyqMetadata;
 }

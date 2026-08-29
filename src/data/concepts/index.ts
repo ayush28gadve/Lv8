@@ -12,11 +12,18 @@ export const PHYSICS_CONCEPTS: Record<ConceptId, PhysicsConcept> = {
       'The systematic identification and isolation of all real forces acting on an object or system to determine net translational dynamics.',
     deepPrinciple:
       "Every force requires a physical agent and an interaction partner (Newton's Third Law pair). In an inertial frame, only real physical interactions (contact forces like normal reaction, tension, friction, and non-contact field forces like gravity) are included in a Free-Body Diagram. Fictitious forces are excluded unless analyzed from a non-inertial reference frame.",
+    learningObjective:
+      'Master force identification in accelerating vertical/horizontal frames and construct correct static FBD systems.',
     prerequisites: [
       'Vectors: magnitude, direction, and component resolution',
       'Basic definition of contact and non-contact forces',
       "Newton's Third Law (action-reaction pairs act on different bodies)",
     ],
+    classLevel: 'Class 11',
+    examId: 'jee-main',
+    subjectId: 'physics',
+    chapterId: 'laws-of-motion',
+    topicId: 'free-body-diagrams',
     coreEquations: [
       {
         id: 'eq-fbd-1',
@@ -97,11 +104,18 @@ export const PHYSICS_CONCEPTS: Record<ConceptId, PhysicsConcept> = {
       'The foundational relationship between the unbalanced net force vector acting on a mass and the resulting time rate of change of momentum (acceleration).',
     deepPrinciple:
       'The net vector sum of all external forces acting on a body of constant mass produces an instantaneous acceleration in the exact direction of the net force, inversely proportional to the mass: F_net = m * a.',
+    learningObjective:
+      'Calculate system accelerations and solve kinematics coupling equations under constant unbalanced forces.',
     prerequisites: [
       'Concept of inertia and mass as a measure of inertia',
       'Vector addition and resolution into perpendicular components',
       'Basic 1D kinematics (v = u + at, s = ut + 0.5at², v² = u² + 2as)',
     ],
+    classLevel: 'Class 11',
+    examId: 'jee-main',
+    subjectId: 'physics',
+    chapterId: 'laws-of-motion',
+    topicId: 'newton-laws',
     coreEquations: [
       {
         id: 'eq-nl2-1',
@@ -183,11 +197,18 @@ export const PHYSICS_CONCEPTS: Record<ConceptId, PhysicsConcept> = {
       'The contact force that opposes relative tangential motion or the impending tendency of relative motion between two surfaces in contact.',
     deepPrinciple:
       'Static friction is an adaptive, self-adjusting reaction force up to a limiting maximum value (f_s <= mu_s * N). Once relative sliding occurs, kinetic friction acts with constant magnitude (f_k = mu_k * N) strictly opposing the instantaneous relative velocity vector.',
+    learningObjective:
+      'Differentiate between static and kinetic friction regimes and determine friction forces at threshold limits.',
     prerequisites: [
       'Normal reaction force determination',
       'Newton’s First and Second Laws',
       'Distinction between static equilibrium and dynamic motion',
     ],
+    classLevel: 'Class 11',
+    examId: 'jee-main',
+    subjectId: 'physics',
+    chapterId: 'laws-of-motion',
+    topicId: 'friction',
     coreEquations: [
       {
         id: 'eq-frc-1',
@@ -273,11 +294,18 @@ export const PHYSICS_CONCEPTS: Record<ConceptId, PhysicsConcept> = {
       'Dynamics and force resolution on tilted planar surfaces, requiring rotated coordinate systems to separate normal and tangential behavior.',
     deepPrinciple:
       'Gravitational force acts vertically downward and decomposes on an incline of angle theta into a parallel downhill component (mg sin theta) and a perpendicular normal component (mg cos theta). The normal contact force is N = mg cos theta (in absence of other perpendicular forces).',
+    learningObjective:
+      'Resolve weight components along and perpendicular to rotated inclined planes and compute downhill sliding dynamics.',
     prerequisites: [
       'Trigonometric functions (sine, cosine) and angle decomposition',
       'Free-Body Diagrams and normal force determination',
       'Friction on contact surfaces',
     ],
+    classLevel: 'Class 11',
+    examId: 'jee-main',
+    subjectId: 'physics',
+    chapterId: 'laws-of-motion',
+    topicId: 'inclined-planes',
     coreEquations: [
       {
         id: 'eq-inc-1',
@@ -363,11 +391,18 @@ export const PHYSICS_CONCEPTS: Record<ConceptId, PhysicsConcept> = {
       'Coupled multi-body mechanical systems constrained by light inextensible strings and frictionless pulleys, sharing common kinematic constraints.',
     deepPrinciple:
       'In an ideal string-pulley system (massless, inextensible string; frictionless, massless pulley), the magnitude of acceleration is identical for all connected segments along the string constraint, and string tension is uniform throughout each continuous segment.',
+    learningObjective:
+      'Formulate coupled equations of motion for multi-body pulley systems under ideal tension constraints.',
     prerequisites: [
       'Newton’s Second Law applied to individual isolated subsystems',
       'String constraint kinematics (constant total string length)',
       'Free-Body Diagrams of individual connected bodies',
     ],
+    classLevel: 'Class 11',
+    examId: 'jee-main',
+    subjectId: 'physics',
+    chapterId: 'laws-of-motion',
+    topicId: 'connected-systems',
     coreEquations: [
       {
         id: 'eq-pul-1',
