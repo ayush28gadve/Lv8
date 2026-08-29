@@ -51,13 +51,13 @@ export const genai = { get client() { return getGenAI(); } };
  * Primary reasoning model – used for evaluation and diagnosis.
  * Flash models are preferred for latency-sensitive demo workloads.
  */
-export const PRIMARY_MODEL = 'gemini-3.6-flash';
+export const PRIMARY_MODEL = 'gemini-3.7-flash';
 
 /**
  * Structured output model – used when strict JSON schema compliance is required
  * (twin generation, verification output parsing).
  */
-export const STRUCTURED_MODEL = 'gemini-3.6-flash';
+export const STRUCTURED_MODEL = 'gemini-3.7-flash';
 
 // ---------------------------------------------------------------------------
 // Helper types & utilities
@@ -186,12 +186,10 @@ export async function generateText(
   const response = await genai.client.models.generateContent({
     model,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    ...(systemInstruction
-      ? { systemInstruction: { parts: [{ text: systemInstruction }] } }
-      : {}),
     config: {
       maxOutputTokens,
       temperature,
+      ...(systemInstruction ? { systemInstruction } : {}),
       ...(responseSchema
         ? {
             responseMimeType: 'application/json',
