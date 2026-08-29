@@ -1,7 +1,7 @@
 # ConceptTwin: Complete End-to-End Product Workflow
 
 ## 1. Product Purpose
-Conventional physics question banks (such as standard JEE/NEET test prep portals) suffer from a critical flaw: they optimize for passive question browsing, rote formula lookup, and superficial pattern-matching. Students often memorize how to solve specific, familiar looking problems without grasping the underlying physics principles. Consequently, when presented with a slight variation in a different context, they fail.
+Conventional physics question banks (such as standard entrance test prep portals) suffer from a critical flaw: they optimize for passive question browsing, rote formula lookup, and superficial pattern-matching. Students often memorize how to solve specific, familiar looking problems without grasping the underlying physics principles. Consequently, when presented with a slight variation in a different context, they fail.
 
 **ConceptTwin** changes the paradigm: **"Don't tell the student what they know. Make them demonstrate it."** 
 It establishes a rigorous learning loop where students must explain *why* they performed each step, and then prove their conceptual transfer by solving a dynamically synthesized "Concept Twin"—a problem with a completely different surface appearance but the identical deep mathematical and physical structure.
@@ -11,22 +11,20 @@ It establishes a rigorous learning loop where students must explain *why* they p
 ## 2. Target Users
 ConceptTwin targets high-stakes physics preparation where deep conceptual understanding is the bottleneck to success:
 *   **Class 11 Students:** Grasping core mechanical concepts (Forces, Circular Motion, Work-Energy) for the first time.
-*   **Class 12 Students:** Master electromagnetism, optics, and modern physics.
+*   **Class 12 Students:** Mastering electromagnetism, optics, and modern physics.
 *   **JEE Aspirants (Mains/Advanced):** Students facing highly creative, multi-concept problems where simple formula memorization fails.
 *   **NEET Aspirants:** Medical prep students requiring rapid, accurate conceptual execution without mathematical overhead.
 *   **Board-Exam Students:** Students needing to articulate derivation steps and step-by-step reasoning clearly.
 
-*Scalability Note:* While the MVP targets Class 11 Mechanics (Laws of Motion), the data schemas, metadata structures, and AI prompt pipelines are fully generic and scale seamlessly to any math/science curriculum.
+*Scalability Note:* While the initial release targets Class 11 Mechanics (Laws of Motion), the data schemas, metadata structures, and AI prompt pipelines are fully generic and scale seamlessly to any science or mathematics curriculum.
 
 ---
 
 ## 3. Student Onboarding
 Onboarding establishes a personalized student profile used to initialize the adaptive mastery engine:
 *   **Name:** Personal identity.
-*   **Class:** Grade level (e.g., Class 11, Class 12, Dropper).
+*   **Class:** Grade level (e.g., Class 11, Class 12).
 *   **Exam Profile:** JEE Mains, JEE Advanced, NEET, or CBSE Boards.
-*   **School/Institution (Optional):** Contextual tracking.
-*   **Subject:** Current study focus (e.g., Physics).
 *   **Active Chapter & Concept:** The initial starting point chosen by the student or recommended by the system.
 
 *Prerequisite Recommendation:* If a student selects a complex concept, the system evaluates their historical performance on prerequisite concepts and offers an automatic diagnostic run to verify their foundations.
@@ -53,22 +51,22 @@ ConceptTwin supports two ways for students to submit their solution attempts:
 1.  **Typed Solution:** Text inputs containing equations and final numerical answers.
 2.  **Handwritten Solution Upload:** An uploaded image/photo of the student's paper-based solving sheet.
 
-This is especially critical for Indian students preparing for JEE, NEET, and board examinations, who naturally solve numerical and conceptual problems on paper using a pen or pencil.
+This is especially critical for students preparing for competitive examinations, who naturally solve numerical and conceptual problems on paper using a pen or pencil.
 
 ### Multimodal Vision Pipeline
-The image analysis is **not** treated as simple OCR (Optical Character Recognition). A specialized Multimodal Gemini Vision model acts as the input parser to decode:
+The image analysis is handled server-side. A specialized Multimodal Gemini Vision model acts as the input parser to decode:
 *   **Handwritten Equations:** Deciphers math scripts, coordinate systems, and symbols.
 *   **Diagrams & Free Body Diagrams (FBDs):** Analyzes geometric vectors, force arrows, and coordinate alignments drawn by the student.
 *   **Crossed-Out Work:** Distinguishes between active calculations and discarded scratch paths.
 *   **Annotations:** Detects marginal notes, comments, or coordinate markers.
 *   **Reasoning Sequence:** Reconstructs the logical chronological flow of calculations.
-*   **Honest Uncertainty Handling:** If handwriting is illegible, low-contrast, or cut off, the vision engine flags this as "low-confidence/ambiguous" rather than hallucinating mathematical contents.
+*   **Honest Uncertainty Handling:** If handwriting is illegible, low-contrast, or cut off, the vision engine flags this as "low-confidence/ambiguous" rather than guessing mathematical contents.
 
 ---
 
 ## 6. PYQ Diagnostic System
 Every learning session begins with a curated **Previous Year Question (PYQ)** which acts as the diagnostic anchor.
-*   **Diagnostic Anchor:** Real, high-quality exam questions (e.g., JEE 2023) ground the learning loop in actual exam standards.
+*   **Diagnostic Anchor:** Real, high-quality exam questions ground the learning loop in actual exam standards.
 *   **Dual Capture Inputs:** Students cannot proceed by guessing a multiple-choice option. They must:
     1.  Read the question.
     2.  Attempt the problem on paper or via the keyboard.
@@ -209,24 +207,24 @@ Curated problems and student attempts carry extensive metadata to support adapti
 
 ---
 
-## 16. MVP Content Strategy
-For the LV8 hackathon, the system demonstrates full vertical depth on a focused scope:
+## 16. Curated Content Strategy
+The system demonstrates full vertical depth on a focused scope:
 *   **Syllabus:** Class 11 Physics $\rightarrow$ Laws of Motion $\rightarrow$ Friction & Forces.
-*   **Core Concepts (4–6):**
+*   **Core Concepts (4–5):**
     1.  Vertical normal force in accelerating systems (Elevator).
     2.  Static vs kinetic friction threshold on horizontal planes.
     3.  Resolving gravity on inclined planes.
-    4.  Tension in single-pulley systems (Atwood machine).
+    4.  Tension in single-pulley systems (Connected Bodies).
 
 ---
 
 ## 17. Complete User Journey
 1.  **Enter & Align:** Student logs in, selects Class 11 and "Laws of Motion".
 2.  **Target Concept:** Student chooses "Normal Force in Accelerating Systems".
-3.  **Diagnostic Anchor:** Platform serves the seed PYQ (`prob-fbd-01`).
+3.  **Diagnostic Anchor:** Platform serves the seed question (`prob-fbd-01`).
 4.  **Attempt on Paper:** Student solves the problem on paper, gets $20\,\text{N}$, and draws a basic free-body diagram.
-5.  **Image Submission:** Student takes a photo of their page using a mobile camera and uploads the JPEG to the ConceptTwin workspace, typing "20 N" in the final answer box.
-6.  **AI Vision Parsing:** The multimodal vision model processes the JPEG, extracts the equation $N = mg$, identifies that the elevator acceleration was omitted from their FBD, and sets the structured representation.
+5.  **Image Submission:** Student takes a photo of their page using a mobile camera and uploads the image to the ConceptTwin workspace, typing "20 N" in the final answer box.
+6.  **AI Vision Parsing:** The multimodal vision model processes the image, extracts the equation $N = mg$, identifies that the elevator acceleration was omitted from their FBD, and sets the structured representation.
 7.  **Evaluate:** AI Evaluator marks the attempt incorrect.
 8.  **Diagnose:** AI Diagnostician detects misconception: "Assumed normal force equals gravity blindly ($N=mg$), ignoring system acceleration ($a$)."
 9.  **Twin Generation:** Twin Generator synthesizes a new context: "A rocket cabin containing a $10\,\text{kg}$ cargo trunk accelerating upwards at $5\,\text{m/s²}$..."
@@ -235,7 +233,7 @@ For the LV8 hackathon, the system demonstrates full vertical depth on a focused 
 
 ---
 
-## 18. Hackathon Differentiation
+## 18. Product Differentiation
 Unlike existing edtech platforms:
 *   **Static Question Banks:** Serve endless random questions without understanding *why* a student failed.
 *   **AI Question Generators:** Create generic questions without preserving deep structural equivalence.
@@ -248,12 +246,12 @@ Unlike existing edtech platforms:
 *   **Curriculum / Data Layer:** Stores topics, concepts, and prerequisite links.
 *   **Question Bank:** Hosts curated seed problems with complete physical answers and reasoning.
 *   **Student Attempt Layer:** Handles session creation, saves student logs, supports image uploads, and coordinates attempts.
-*   **AI Vision Parser (New Capability):** Validates and pre-processes image files (JPG, PNG, JPEG), calls the Multimodal Gemini model to output structured text/JSON containing parsed steps, FBD descriptions, and calculations.
+*   **AI Vision Parser:** Validates and pre-processes image files (JPG, PNG, JPEG), calling the Multimodal Gemini model to output structured text/JSON containing parsed steps, FBD descriptions, and calculations.
 *   **AI Evaluation Layer:** Executes `evaluatorNode` using structured schemas to verify correctness.
 *   **Misconception Engine:** Executes `diagnosticianNode` to identify conceptual failures.
 *   **Concept Twin Generator:** Executes `twinGeneratorNode` to synthesize new problems.
 *   **Mastery Engine:** Reducer logic that updates mastery scores.
-*   **UI/UX Layer:** Displays the technical dark-mode workspace, supporting paper solution upload widgets, visual concept maps, and step-by-step diagnostic feedback.
+*   **UI/UX Layer:** Displays the light-first workspace, supporting paper solution upload widgets, visual concept maps, and step-by-step diagnostic feedback.
 
 ---
 
