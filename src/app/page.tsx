@@ -61,8 +61,8 @@ export default function Home() {
 
   // Temporary Onboarding Form States
   const [onboardingName, setOnboardingName] = useState<string>('');
-  const [onboardingClass, setOnboardingClass] = useState<'11' | '12'>('12');
-  const [onboardingExam, setOnboardingExam] = useState<'JEE' | 'NEET' | 'Board'>('NEET');
+  const [onboardingClass, setOnboardingClass] = useState<'11' | '12'>('11');
+  const [onboardingExam, setOnboardingExam] = useState<'JEE' | 'NEET' | 'Board'>('JEE');
   const [onboardingConcept, setOnboardingConcept] = useState<ConceptId>('fbd-force-identification');
 
   // Vision / Handwriting Submission States
@@ -454,14 +454,11 @@ export default function Home() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setOnboardingClass('12')}
-                    className={`py-2 text-xs font-semibold rounded transition-all cursor-pointer ${
-                      onboardingClass === '12'
-                        ? 'bg-accent-dark text-white shadow-sm'
-                        : 'text-text-secondary hover:text-text-primary'
-                    }`}
+                    disabled
+                    className="py-2 text-xs font-semibold rounded text-text-disabled bg-bg-secondary/40 cursor-not-allowed flex items-center justify-center space-x-1"
                   >
-                    Class 12
+                    <span>Class 12</span>
+                    <span className="text-[8px] bg-bg-card border border-border-default px-1.5 py-0.5 rounded text-text-muted font-bold tracking-tight">Soon</span>
                   </button>
                 </div>
               </div>
@@ -469,20 +466,33 @@ export default function Home() {
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Target Exam</label>
                 <div className="grid grid-cols-3 bg-bg-secondary p-1 rounded-lg border border-border-default">
-                  {(['JEE', 'NEET', 'Board'] as const).map((ex) => (
-                    <button
-                      key={ex}
-                      type="button"
-                      onClick={() => setOnboardingExam(ex)}
-                      className={`py-2 text-xs font-semibold rounded transition-all cursor-pointer ${
-                        onboardingExam === ex
-                          ? 'bg-accent-dark text-white shadow-sm'
-                          : 'text-text-secondary hover:text-text-primary'
-                      }`}
-                    >
-                      {ex}
-                    </button>
-                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingExam('JEE')}
+                    className={`py-2 text-xs font-semibold rounded transition-all cursor-pointer ${
+                      onboardingExam === 'JEE'
+                        ? 'bg-accent-dark text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    JEE
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="py-2 text-xs font-semibold rounded text-text-disabled bg-bg-secondary/40 cursor-not-allowed flex items-center justify-center space-x-1"
+                  >
+                    <span>NEET</span>
+                    <span className="text-[8px] bg-bg-card border border-border-default px-1.5 py-0.5 rounded text-text-muted font-bold tracking-tight">Soon</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="py-2 text-xs font-semibold rounded text-text-disabled bg-bg-secondary/40 cursor-not-allowed flex items-center justify-center space-x-1"
+                  >
+                    <span>Board</span>
+                    <span className="text-[8px] bg-bg-card border border-border-default px-1.5 py-0.5 rounded text-text-muted font-bold tracking-tight">Soon</span>
+                  </button>
                 </div>
               </div>
             </div>

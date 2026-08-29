@@ -4,9 +4,16 @@ An AI-powered adaptive physics learning system that detects surface-level patter
 
 ---
 
-## Overview
+## Product Overview
 
-ConceptTwin helps students move beyond rote formula memorization and surface-level pattern matching. By evaluating the student's step-by-step physical reasoning, identifying specific conceptual gaps, generating structurally equivalent "twin" problems, and verifying whether the student can transfer the concept to a new physical scenario, ConceptTwin ensures true mastery.
+ConceptTwin is an adaptive AI learning system for physics that focuses on conceptual understanding rather than answer matching. 
+
+The product is designed around:
+*   **Diagnostic Assessment**: Testing baseline knowledge using exam-level questions.
+*   **Reasoning Evaluation**: Analyzing step-by-step calculations and physics logic.
+*   **Conceptual Gap Detection**: Isolating rote-pattern reasoning and specific misconceptions.
+*   **Structurally Related Twin Problems**: Serving isomorphic problems in new visual contexts.
+*   **Transfer-Based Mastery**: Unlocking progress only when the concept is successfully transferred.
 
 ---
 
@@ -193,3 +200,35 @@ npm run build
 *   **Database Scaling**: Adapt the concept nodes to support further physics domains (e.g., Work-Power-Energy, Kinematics) and subjects (e.g., Chemistry, Mathematics).
 *   **Deeper Image Recognition**: Upgrade the vision parser to decipher complex handwritten Free-Body Diagrams (FBDs) and grade vector alignments.
 *   **Historical Dashboard**: Implement analytics tracking student misconception trends over time.
+
+---
+
+## Product Model
+
+### Target Audience
+*   **Students & Aspirants**: Preparing for competitive engineering and medical entrance examinations (such as JEE and NEET).
+*   **Teachers & Instructors**: Utilizing diagnostic reports to isolate learning gaps at scale.
+*   **Coaching & Educational Institutions**: Offering adaptive practice workspaces and custom syllabus progress tracking.
+
+### Potential Deployment Routes
+*   **Self-Paced Practice Portal**: Individual subscription models for entrance exam students looking to verify conceptual logic.
+*   **Institutional Integration API**: SaaS deployment option for private coaching classrooms to audit offline handwritten mock tests.
+*   **Analytics Dashboard Expansion**: Future dashboards providing group-level cognitive gap heatmaps directly to school administrators.
+
+---
+
+## User & System Policy
+
+*   **Educational Use**: ConceptTwin is designed as a practice and study aid. AI tutoring feedback and step-by-step evaluations are intended to support active learning rather than replace formal teacher judgment.
+*   **Academic Integrity**: Students are expected to provide their own authentic solution steps and numerical values to obtain meaningful gap diagnoses.
+*   **Data Processing**: Student solution text and uploaded notepad images are processed strictly for the runtime evaluation and transcription flow. No PII is extracted.
+*   **AI Verification**: All dynamically synthesized ConceptTwin questions are passed through an internal Verifier agent pass to ensure physics and formatting consistency.
+*   **System Integrity**: API keys and prompt instructions remain secured server-side. No private keys or AI configuration variables are exposed to the client.
+
+---
+
+## Support & Contact
+
+For inquiries or documentation details, please contact:
+*   **Team Email**: `[TEAM EMAIL]`
+
